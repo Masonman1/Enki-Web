@@ -35,6 +35,15 @@ export const parseFiles = (files: File[], options: { focus?: 'setup' | 'procurem
         "Risk: Sequencing dependency not addressed (e.g., prior to drywall)"
       ];
       break;
+    case 'pds':
+  mocks = files.map(file => ({ // Structured for DB
+    manufacturer: 'Stub Mfr',
+    name: file.name.split('.')[0],
+    voc_level: 50.5, // Mock float
+    compatibility: ['concrete', 'gypsum'] // JSONB array
+  }));
+  return mocks;
+  break;  
     default:
       mocks = [
         "Risk: Substrate mismatch (e.g., incompatible membrane on gypsum)",

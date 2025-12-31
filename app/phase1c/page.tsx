@@ -17,7 +17,7 @@ export default function ProductDB() {
   const [session, setSession] = useState(null);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [risks, setRisks] = useState<string[]>([]);
+  const [parsedProducts, setParsedProducts] = useState<any[]>([]); // Structured
   const [generatedMatches, setGeneratedMatches] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -39,92 +39,110 @@ export default function ProductDB() {
     setFiles(acceptedFiles);
     setUploading(true);
     setError(null);
-    setRisks([]);
+    setParsedProducts([]);
     setGeneratedMatches([]);
 
     try {
-      // Upload PDS PDFs to 'enki-storage/pds/user_{id}/'
-      const uploadedFiles = [];
-      for (const file of acceptedFiles) {
-        const safeName = file.name.replace(/[$$  $$]/g, '').replace(/\s/g, '_');
+      // Upload to storage
+      const uploadPromises = acceptedFiles.map(async (file) => {
+        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
+        const userId = session.user.id;
+        const path = `pds/user_${userId}/${safeName}`;
+        console.log('Uploading to path:', path);
+
         const { data, error: uploadError } = await supabase.storage
           .from('enki-storage')
-          .upload(`pds/user_${session?.user.id}/${safeName}`, file);
+          .upload(path, file, {
+            upsert: true,
+            metadata: { type: 'pds', jobId: 'stub-job-123', deleted_at: null }
+          });
+
         if (uploadError) throw uploadError;
-        uploadedFiles.push(safeName);
-      }
-      console.log('Upload successful:', uploadedFiles);
-      toast.success('PDS upload successful!');
+        return data;
+      });
 
-      // Stub parse for PDS details (e.g., VOC, lead times, substrates)
-      const parsedDetails = parseFiles(acceptedFiles, { focus: 'pds' }); // Custom focus for product data
-      console.log('Parsed PDS details:', parsedDetails);
-      setRisks(parsedDetails); // Treat as 'details' for matching
+      await Promise.all(uploadPromises);
+      toast.success('PDS uploaded!');
 
-      // Stub generate for spec matching/risks (future: Compare to job specs from 1A)
-      const matches = await generateFromRisks(parsedDetails, { type: 'matches', context: { jurisdiction: 'CA', materialType: 'membrane' } }); // Mock risks like "Mismatch: VOC exceeds regs"
-      console.log('Generated matches/risks:', matches);
+      // Parse structured details (VOC, compatibility)
+      const parsed = parseFiles(acceptedFiles, { focus: 'pds' });
+      setParsedProducts(parsed);
+
+      // Stub: Fetch job specs for matching (text search on scope_summary)
+      const { data: job } = await supabase.from('jobs').select('scope_summary').eq('id', '7b078984-527a-495f-a738-18a0fa53de35').maybeSingle();
+      const specRequirements = job?.data?.scope_summary || 'Stub specs: Low-VOC membrane for concrete substrate';
+
+      // Generate risks/matches (convert structured to risk strings for generate)
+      const riskStrings = parsed.map(p => `Risk: VOC ${p.voc_level} vs spec; Compatibility: ${p.compatibility.join(', ')}`);
+      const matches = await generateFromRisks(riskStrings, { type: 'notes', context: { materialType: 'membrane' } }); // Alternates as notes
       setGeneratedMatches(matches);
-      toast.success('Spec matching complete!');
+
+      // Store in DB: Insert to products, update jobs.product_matches
+      const { error: productsError } = await supabase.from('products').insert(parsed);
+      if (productsError) throw productsError;
+
+      const productIds = parsed.map(p => p.id); // Assume UUID gen in insert
+      const { error: jobsError } = await supabase.from('jobs').update({
+        product_matches: matches // JSONB array
+      }).eq('id', '7b078984-527a-495f-a738-18a0fa53de35');
+      if (jobsError) throw jobsError;
+
     } catch (err) {
-      console.error('Upload/Parse Error details:', err);
-      const errorMsg = 'Upload or matching failed: ' + (err as Error).message || "Check RLS or re-login.";
-      setError(errorMsg);
-      toast.error(errorMsg);
+      setError(err.message || 'Process failed.');
+      toast.error('Error during PDS handling.');
     } finally {
       setUploading(false);
     }
   };
 
-  if (!session) return null;
-
   return (
-    <div className="container mx-auto p-4">
-      <Card>
+    <div className="flex min-h-screen flex-col items-center justify-center p-24">
+      <Card className="w-[600px]">
         <CardHeader>
-          <CardTitle>Phase 1C: Product DB/Spec Matching (Stub)</CardTitle>
+          <CardTitle>Phase 1C: Product DB & Spec Matching</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">Upload vendor PDS PDFs (e.g., Tremco membranes) for AI parsing and mock matching against job specs. Focus: Flag risks like VOC limits, lead times, substrate compatibilities for waterproofing profit protection.</p>
           <UploadZone onUpload={handleUpload} />
-
-          {uploading && <p className="mt-4">Uploading and matching...</p>}
-
+          {uploading && <p>Uploading and processing...</p>}
           {error && (
-            <Alert variant="destructive" className="mt-4">
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
-          {risks.length > 0 && (
+          {parsedProducts.length > 0 && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Parsed PDS Details</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Detail</TableHead>
+                    <TableHead>Manufacturer</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>VOC Level</TableHead>
+                    <TableHead>Compatibility</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {risks.map((detail, index) => (
+                  {parsedProducts.map((product, index) => (
                     <TableRow key={index}>
-                      <TableCell>{detail}</TableCell>
+                      <TableCell>{product.manufacturer}</TableCell>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{product.voc_level}</TableCell>
+                      <TableCell>{product.compatibility.join(', ')}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
           )}
-
           {generatedMatches.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Generated Spec Matches/Risks</h3>
+              <h3 className="text-lg font-semibold">Generated Spec Matches/Risks/Alternates</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Match/Risk</TableHead>
+                    <TableHead>Match/Risk Note</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -135,10 +153,9 @@ export default function ProductDB() {
                   ))}
                 </TableBody>
               </Table>
-              <Button className="mt-4" onClick={() => alert('Stub: Email spec matching report')}>One-Click Email Report</Button>
+              <Button className="mt-4" onClick={() => alert('Stub: Email vendor for quantities/stock; loop until confirmed')}>One-Click Vendor Email Loop</Button>
             </div>
           )}
-
           <Button className="mt-6" variant="outline" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
         </CardContent>
       </Card>
