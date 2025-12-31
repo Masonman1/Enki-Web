@@ -29,7 +29,7 @@ export default function Dashboard() {
               <Button onClick={() => router.push('/phase1a')}>Job Setup (1A)</Button>
               <Button onClick={() => router.push('/phase1c')}>Product DB/Spec Matching (1C - Stub)</Button> {/* Updated: Links to /phase1c for prep */}
               <Button onClick={() => router.push('/phase1d')}>Kickoff/Compliance (1D)</Button>
-              <Button onClick={() => router.push('/phase1b/submittals')}>Submittal Log/Review (1E)</Button>
+              <Button onClick={() => router.push('/phase1e')}>Submittals Log/Review (1E)</Button>
               <Button onClick={() => alert('Coming Soon: Scheduling/Progress (1F)')}>Scheduling/Progress (1F - Pending)</Button>
               <Button onClick={() => router.push('/phase1b/change-order')}>Change Orders (1G)</Button>
               <Button onClick={() => router.push('/phase1b/procurement')}>Procurement (1H)</Button>

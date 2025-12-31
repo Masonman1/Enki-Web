@@ -1,10 +1,10 @@
-'use client'; // Client component for hooks and interactivity
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import UploadZone from '@/components/forms/upload-zone';
@@ -13,7 +13,7 @@ import { generateFromRisks } from '@/lib/ai-generate';
 import { AlertCircle } from 'lucide-react';
 import toast from "react-hot-toast";
 
-export default function SubmittalsReview() {
+export default function SubmittalsLog() {
   const [session, setSession] = useState(null);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -43,60 +43,70 @@ export default function SubmittalsReview() {
     setGeneratedNotes([]);
 
     try {
-      // Standardized bucket: 'enki-storage' with phase sub-paths (e.g., 'jobs/' for setup, 'submittals/' for reviews).
-      // RLS enforces user_${id}/ prefix for security—errors indicate auth/policy issues.
-      const uploadedFiles = [];
-      for (const file of acceptedFiles) {
+      // Upload to storage
+      const uploadPromises = acceptedFiles.map(async (file) => {
         const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
+        const userId = session.user.id;
+        const path = `submittals/user_${userId}/${safeName}`;
+        console.log('Uploading to path:', path);
+
         const { data, error: uploadError } = await supabase.storage
           .from('enki-storage')
-          .upload(`submittals/user_${session?.user.id}/${safeName}`, file);
-        if (uploadError) throw uploadError;
-        uploadedFiles.push(safeName);
-      }
-      console.log('Upload successful:', uploadedFiles); // Debug
-      toast.success('Upload successful!');
+          .upload(path, file, {
+            upsert: true,
+            contentType: file.type,
+            metadata: { type: 'submittals', jobId: '7b078984-527a-495f-a738-18a0fa53de35', deleted_at: null }
+          });
 
-      const parsedRisks = parseFiles(acceptedFiles, { focus: 'submittals' }); // Custom for warranty/compliance
-      console.log('Parsed risks:', parsedRisks); // Debug
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
+        console.log('Upload success:', data);
+        return data;
+      });
+
+      await Promise.all(uploadPromises);
+      toast.success('Files uploaded successfully!');
+
+      // Parse risks (focus: 'submittals')
+      const parsedRisks = parseFiles(acceptedFiles, { focus: 'submittals' });
       setRisks(parsedRisks);
 
+      // Generate review notes/warranty items
       const notes = await generateFromRisks(parsedRisks, { type: 'notes', context: { jurisdiction: 'CA', materialType: 'membrane' } });
-      console.log('Generated notes:', notes); // Debug
       setGeneratedNotes(notes);
-      toast.success('Notes generated!');
+
+      // Stub: Insert to submittals table and update jobs.submittals JSONB
+      const submittals = parsedRisks.map((r, idx) => ({ job_id: '7b078984-527a-495f-a738-18a0fa53de35', risks: r, notes: notes[idx] }));
+      console.log('Stub: Adding to submittals table and jobs.submittals:', submittals);
+      // Real: await supabase.from('submittals').insert(submittals); then update jobs.submittals
+
     } catch (err) {
-      console.error('Upload/Parse Error details:', err); // Enhanced log
-      const errorMsg = 'Upload or processing failed: ' + (err as Error).message || "Upload failed - check RLS policies or re-login.";
-      setError(errorMsg);
-      toast.error(errorMsg);
+      setError(err.message || 'Process failed.');
+      toast.error('Error during submittals handling.');
     } finally {
       setUploading(false);
     }
   };
 
-  if (!session) return null;
-
   return (
-    <div className="container mx-auto p-4">
-      <Card>
+    <div className="flex min-h-screen flex-col items-center justify-center p-24">
+      <Card className="w-[600px]">
         <CardHeader>
-          <CardTitle>Phase 1E: Submittal Log/Review Hub</CardTitle>
+          <CardTitle>Phase 1E: Submittals Log & Review</CardTitle>
+          <CardDescription>Upload submittals for risk parsing and review notes/warranty generation.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">Upload PDFs (vendor submittals, data sheets) for AI review. Focus: Warranty flags, compliance checks, substrate compatibilities for waterproofing (stubbed for Phase 1).</p>
           <UploadZone onUpload={handleUpload} />
-
-          {uploading && <p className="mt-4">Uploading and processing...</p>}
-
+          {uploading && <p>Uploading and processing...</p>}
           {error && (
-            <Alert variant="destructive" className="mt-4">
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
           {risks.length > 0 && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Identified Risks</h3>
@@ -116,10 +126,9 @@ export default function SubmittalsReview() {
               </Table>
             </div>
           )}
-
           {generatedNotes.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Generated Review Notes</h3>
+              <h3 className="text-lg font-semibold">Generated Review Notes/Warranties</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -134,10 +143,9 @@ export default function SubmittalsReview() {
                   ))}
                 </TableBody>
               </Table>
-              <Button className="mt-4" onClick={() => alert('Stub: Email submittal review notes')}>One-Click Email Review</Button>
+              <Button className="mt-4" onClick={() => alert('Stub: Email submittal review/warranty registration')}>One-Click Email Review</Button>
             </div>
           )}
-
           <Button className="mt-6" variant="outline" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
         </CardContent>
       </Card>

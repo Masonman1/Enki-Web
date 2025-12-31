@@ -49,6 +49,12 @@ export const parseFiles = (files: File[], options: { focus?: 'setup' | 'procurem
     "Risk: SSSP missing VOC handling training for adhesives",
     "Risk: RFI needed for substrate prep sequencing (e.g., prior to membrane install)"
   ];
+  break;
+  case 'submittals':
+  mocks = [
+    "Risk: Submittal mismatch on membrane thickness",
+    "Risk: Warranty registration pending for flashing materials"
+  ];
   break;  
     default:
       mocks = [
