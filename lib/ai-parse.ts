@@ -43,6 +43,12 @@ export const parseFiles = (files: File[], options: { focus?: 'setup' | 'procurem
     compatibility: ['concrete', 'gypsum'] // JSONB array
   }));
   return mocks;
+  break;
+  case 'kickoff':
+  mocks = [
+    "Risk: SSSP missing VOC handling training for adhesives",
+    "Risk: RFI needed for substrate prep sequencing (e.g., prior to membrane install)"
+  ];
   break;  
     default:
       mocks = [

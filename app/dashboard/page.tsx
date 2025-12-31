@@ -28,7 +28,7 @@ export default function Dashboard() {
             <div className="flex flex-col space-y-2 mt-2">
               <Button onClick={() => router.push('/phase1a')}>Job Setup (1A)</Button>
               <Button onClick={() => router.push('/phase1c')}>Product DB/Spec Matching (1C - Stub)</Button> {/* Updated: Links to /phase1c for prep */}
-              <Button onClick={() => alert('Coming Soon: Kickoff/Compliance (1D)')}>Kickoff/Compliance (1D - Pending)</Button>
+              <Button onClick={() => router.push('/phase1d')}>Kickoff/Compliance (1D)</Button>
               <Button onClick={() => router.push('/phase1b/submittals')}>Submittal Log/Review (1E)</Button>
               <Button onClick={() => alert('Coming Soon: Scheduling/Progress (1F)')}>Scheduling/Progress (1F - Pending)</Button>
               <Button onClick={() => router.push('/phase1b/change-order')}>Change Orders (1G)</Button>
