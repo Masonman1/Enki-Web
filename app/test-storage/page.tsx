@@ -2,18 +2,13 @@
 
 import { useState, useEffect } from 'react'; // For state and session effect
 import { useRouter } from 'next/navigation'; // For navigation/redirect
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // shadcn/ui components
-import { Button } from '@/components/ui/button'; // shadcn/ui button
-import { Alert, AlertDescription } from '@/components/ui/alert'; // shadcn/ui alert for exhibits
-import { generateFromRisks } from '@/lib/ai-generate'; // AI generate stub
-import { parseFiles } from '@/lib/ai-parse'; // AI parse stub
-import UploadZone from '@/components/forms/upload-zone'; // Drag-drop component
 import { useSupabase } from '@/lib/supabase'; // Singleton hook for Supabase client
+import UploadZone from '@/components/forms/upload-zone'; // Reuse for drag-drop
 import toast from "react-hot-toast"; // For success/error alerts
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // Fixed: Missing imports for shadcn/ui components
 
-export default function Phase1B() {
+export default function TestStorage() {
   const [files, setFiles] = useState<File[]>([]); // State for uploaded files
-  const [generatedExhibits, setGeneratedExhibits] = useState<string[]>([]); // State for generated To-Do clauses
   const [loading, setLoading] = useState(false); // State for loading indicator
   const [session, setSession] = useState(null); // State for Supabase session
   const router = useRouter(); // For navigation/redirect
@@ -34,7 +29,7 @@ export default function Phase1B() {
 
   if (!session) return <div>Loading session...</div>; // Handle null session during load
 
-  // Handle upload function (integrated from test page: upload to bucket with metadata, debug logs)
+  // Handle upload function (minimal: upload to bucket with metadata, debug logs)
   const handleUpload = async (uploadedFiles: File[]) => {
     setFiles(uploadedFiles);
     setLoading(true);
@@ -51,7 +46,7 @@ export default function Phase1B() {
         console.log('Debug: File type:', file.type); // Debug: Verify contentType
 
         const { data, error: uploadError } = await supabase.storage
-          .from('enki-storage') // Working bucket
+          .from('enki-storage') // Bucket name (change here to test different buckets)
           .upload(path, file, {
             upsert: true, // Allow overwrite if file exists
             contentType: file.type, // Auto-set MIME type
@@ -67,23 +62,10 @@ export default function Phase1B() {
         return data.path;
       });
       await Promise.all(uploadPromises);
-      toast.success('Documents uploaded!');
-
-      // Parse misses as risks (Updated: 'setup' focus for essentials extraction)
-      const mockRisks = parseFiles(uploadedFiles, { focus: 'setup' }); // e.g., "Miss: GC contact undefined"
-      console.log('Extracted misses:', mockRisks);
-
-      // Generate To-Do/Exhibits (Updated: Context for waterproofing essentials)
-      const exhibits = await generateFromRisks(mockRisks, { type: 'exhibits', context: { jurisdiction: 'CA' } });
-      setGeneratedExhibits(exhibits);
-
-      // To-Do stub (NEW: Insert misses to 'jobs.to_do_items' JSONB)
-      const toDos = mockRisks.map(r => ({ category: 'job-setup', importance: 'medium', description: r }));
-      // Stub insert (real: await supabase.from('jobs').update({ to_do_items: [...existing, ...toDos] }))
-      console.log('Stub: Adding to jobs.to_do_items:', toDos);
-      toast('To-Do items generated for misses.', { icon: 'ℹ️' }); // FIXED: Custom info-style toast (no built-in .info)
+      toast.success('Upload successful! Check console for details.');
     } catch (error) {
-      console.error('Detailed Supabase Error:', error.message, error.status, error.body); // Full error log for 400
+      console.error('Detailed Supabase Error:', error); // Log full object for body
+        if (error.body) console.log('Error Body:', error.body); // Specific for 400 message
       toast.error('Upload failed: ' + (error.message || 'Check console'));
     } finally {
       setLoading(false);
@@ -94,8 +76,8 @@ export default function Phase1B() {
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
       <Card className="w-[450px]">
         <CardHeader>
-          <CardTitle>Job Setup Wizard (1B)</CardTitle>
-          <CardDescription>Upload subcontracts/specs for essentials extraction and To-Do generation for misses.</CardDescription>
+          <CardTitle>Test Storage Upload</CardTitle>
+          <CardDescription>Drag-drop PDF to test upload to Supabase storage.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <UploadZone onUpload={handleUpload} />
@@ -108,20 +90,6 @@ export default function Phase1B() {
               </ul>
             </div>
           )}
-          <Button onClick={() => handleUpload(files)} disabled={loading || files.length === 0}>
-            {loading ? 'Processing...' : 'Extract Essentials & Generate To-Do'}
-          </Button>
-          {generatedExhibits.length > 0 && (
-            <div className="mt-4 space-y-4">
-              <h4 className="text-sm font-medium">Generated Essentials/To-Do Clauses:</h4>
-              {generatedExhibits.map((exhibit, idx) => (
-                <Alert key={idx} variant="default">
-                  <AlertDescription>{exhibit}</AlertDescription>
-                </Alert>
-              ))}
-            </div>
-          )}
-          <Button className="mt-6" variant="outline" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
         </CardContent>
       </Card>
     </div>
