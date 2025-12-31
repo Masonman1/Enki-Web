@@ -94,7 +94,7 @@ export default function Procurement() {
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
       <Card className="w-[600px]">
         <CardHeader>
-          <CardTitle>Phase 1H: Procurement</CardTitle>
+          <CardTitle>Phase 1H: Procurement & Material Staging</CardTitle>
           <CardDescription>Upload procurement docs for risk parsing (e.g., lead time/stock) and PO clause generation.</CardDescription>
         </CardHeader>
         <CardContent>

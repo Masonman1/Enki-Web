@@ -26,7 +26,8 @@ export default function Dashboard() {
           <div>
             <h3 className="text-lg font-semibold">Navigate to Phase 1 Workflows</h3>
             <div className="flex flex-col space-y-2 mt-2">
-              <Button onClick={() => router.push('/phase1a')}>Job Setup (1A)</Button>
+              <Button onClick={() => router.push('/phase1a')}>Contract Protection (1A)</Button>
+              <Button onClick={() => router.push('/phase1b')}>New Job Setup Wizard (1B)</Button>
               <Button onClick={() => router.push('/phase1c')}>Product DB/Spec Matching (1C - Stub)</Button> {/* Updated: Links to /phase1c for prep */}
               <Button onClick={() => router.push('/phase1d')}>Kickoff/Compliance (1D)</Button>
               <Button onClick={() => router.push('/phase1e')}>Submittals Log/Review (1E)</Button>
