@@ -35,7 +35,7 @@ export default function Dashboard() {
               <Button onClick={() => router.push('/phase1g')}>Change Orders (1G)</Button>
               <Button onClick={() => router.push('/phase1h')}>Procurement (1H)</Button>
               <Button onClick={() => router.push('/phase1i')}>Vendor Invoice Review (1I)</Button>
-              <Button onClick={() => alert('Coming Soon: Payment Apps/Billing (1J)')}>Payment Apps/Billing (1J - Pending)</Button>
+              <Button onClick={() => router.push('/phase1j')}>Payment Apps & Billing (1J)</Button>
               <Button onClick={() => router.push('/phase1b/closeout')}>Closeout (1K)</Button>
               <Button onClick={() => router.push('/phase1b')}>Submittals Wizard (Partial 1B)</Button>
             </div>
