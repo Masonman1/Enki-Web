@@ -36,8 +36,7 @@ export default function Dashboard() {
               <Button onClick={() => router.push('/phase1h')}>Procurement (1H)</Button>
               <Button onClick={() => router.push('/phase1i')}>Vendor Invoice Review (1I)</Button>
               <Button onClick={() => router.push('/phase1j')}>Payment Apps & Billing (1J)</Button>
-              <Button onClick={() => router.push('/phase1b/closeout')}>Closeout (1K)</Button>
-              <Button onClick={() => router.push('/phase1b')}>Submittals Wizard (Partial 1B)</Button>
+              <Button onClick={() => router.push('/phase1k')}>Closeout Automation (1K)</Button>
             </div>
           </div>
           <Button onClick={handleLogout} variant="destructive" className="mt-4">
