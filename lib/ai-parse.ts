@@ -67,6 +67,12 @@ export const parseFiles = (files: File[], options: { focus?: 'setup' | 'procurem
     "Risk: Scope change without pricing protection",
     "Risk: Sequencing dependency not addressed (e.g., prior to drywall)"
   ];
+  break;
+  case 'procurement':
+  mocks = [
+    "Risk: Lead time for flashing materials exceeds GC schedule",
+    "Risk: Stock issues on below-grade membranes"
+  ];
   break;  
     default:
       mocks = [
