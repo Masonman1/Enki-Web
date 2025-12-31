@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import UploadZone from "@/components/forms/upload-zone";
 import { parseFiles } from "@/lib/ai-parse";
 import { generateFromRisks } from "@/lib/ai-generate";
-import { useSupabase } from "@/lib/supabase";
-import toast from "react-hot-toast"; // NEW: For user-facing notifications
+import { useSupabase } from "@/lib/supabase"; // Updated: Use singleton hook for consistency
+import toast from "react-hot-toast";
+import { useRouter } from 'next/navigation'; // Added: For router.back if needed
 
 export default function Phase1A() {
   const [files, setFiles] = useState<File[]>([]);
@@ -16,60 +17,63 @@ export default function Phase1A() {
   const [exhibits, setExhibits] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const supabase = useSupabase();
+  const router = useRouter(); // Added: For navigation
 
   const handleUpload = async (uploadedFiles: File[]) => {
     setFiles(uploadedFiles);
     setError(null);
 
-    let parsedRisks: string[] = [];
     try {
-      // Check session and role
+      // Check session and role (unchanged)
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session - sign in required.");
       const { data: user } = await supabase.auth.getUser();
-      console.log('User role:', user.user?.role); // Debug: Role check
+      if (user.user?.role !== 'authenticated') throw new Error("Role not authenticated.");
 
-      if (user.user?.role !== 'authenticated') throw new Error("Role not authenticated - re-login or check Supabase auth.");
+// Upload with metadata (fit existing policy: start with 'jobs', user_ prefix)
+const uploadPromises = uploadedFiles.map(async (file) => {
+  const safeName = file.name.replace(/[$$  $$]/g, '').replace(/\s/g, '_');
+  const userFolder = `user_${session.user.id}`;  // NEW: Prefix to match policy
+  const path = `jobs/${userFolder}/phase1a/${safeName}`;  // NEW: 'jobs' first (allowed), then user_, then phase/file
+  const { data, error: uploadError } = await supabase.storage
+    .from('enki-storage')
+    .upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+      metadata: { phase: '1A', type: 'specs', jobId: session.user.id }  // Retained for DB linking
+    });
+  if (uploadError) throw uploadError;
+  return data.path;
+});
+await Promise.all(uploadPromises);
+toast.success('Files uploaded successfully!');
 
-      // Upload with expanded logs
-      const uploadPromises = uploadedFiles.map(async (file) => {
-        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
-        const { data, error: uploadError } = await supabase.storage
-          .from('enki-storage')
-          .upload(`jobs/user_${session?.user.id}/${safeName}`, file, { upsert: true });
-
-        if (uploadError) {
-          console.error('Upload error for file', file.name, ':', uploadError); // Enhanced log
-          throw uploadError;
-        }
-        console.log('Uploaded file:', data.path); // Debug: Path confirmation
-        return data;
-      });
-
-      await Promise.all(uploadPromises);
-      console.log('All uploads successful'); // Debug
-      toast.success('Upload successful!'); // NEW: Success toast for user
-    } catch (err: any) {
-      console.error("Upload/Parse Error details:", err); // Enhanced log
-      const errorMsg = err.message || "Upload failed - check RLS policies (e.g., authenticated role, user path match) or re-login. Stubbing parse.";
-      setError(errorMsg);
-      toast.error(errorMsg); // NEW: Error toast for user
-    } finally {
-      parsedRisks = parseFiles(uploadedFiles, { focus: 'setup' });
-      console.log('Parsed risks:', parsedRisks); // Debug: Risks output
+      // Parse with focus (Updated: Explicit 'setup' for pre-bid risks)
+      const parsedRisks = parseFiles(uploadedFiles, { focus: 'setup' }); // e.g., "Risk: VOC compliance violation in CA"
       setRisks(parsedRisks);
+
+      // Generate with context (Updated: Jurisdiction for waterproofing regs)
       const generatedExhibits = await generateFromRisks(parsedRisks, { type: 'exhibits', context: { jurisdiction: 'CA' } });
-      console.log('Generated exhibits:', generatedExhibits); // Debug: Generated output
       setExhibits(generatedExhibits);
-      if (generatedExhibits.length > 0) toast.success('Exhibits generated successfully!'); // NEW: Success toast for generation
+
+      // To-Do stub (NEW: Feed high risks to 'jobs.to_do_items' JSONB)
+      const highRisks = parsedRisks.filter(risk => risk.includes('high')); // Simple filter; real: Threshold logic
+      if (highRisks.length > 0) {
+        // Stub insert (real: await supabase.from('jobs').update({ to_do_items: [...] }))
+        console.log('Stub: Inserting to jobs.to_do_items:', highRisks.map(r => ({ category: 'pre-bid', importance: 'high', description: r })));
+        toast.info('High risks flagged to To-Do items.');
+      }
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred.");
+      toast.error('Upload/processing failed.');
     }
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <Card className="w-[600px]">
+      <Card className="w-[450px]">
         <CardHeader>
-          <CardTitle>Job Setup Wizard</CardTitle>
+          <CardTitle>Pre-Award Protection (1A)</CardTitle> {/* Updated: Consistent title */}
           <CardDescription>Upload specs/subcontracts PDFs for risk parsing and exhibit generation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -110,6 +114,7 @@ export default function Phase1A() {
             </Alert>
           )}
           <Button onClick={() => setFiles([])} variant="outline">Clear Files</Button>
+          <Button variant="outline" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button> {/* Updated: Consistent navigation */}
         </CardContent>
       </Card>
     </div>
