@@ -19,8 +19,8 @@ export default function Phase1A() {
   const supabase = useSupabase();
   const router = useRouter(); // Added: For navigation
 
-  const handleUpload = async (uploadedFiles: File[]) => {
-    setFiles(uploadedFiles);
+  const handleUpload = async (acceptedFiles: File[]) => {
+    setFiles(acceptedFiles);
     setError(null);
 
     try {
@@ -30,42 +30,44 @@ export default function Phase1A() {
       const { data: user } = await supabase.auth.getUser();
       if (user.user?.role !== 'authenticated') throw new Error("Role not authenticated.");
 
-// Upload with metadata (fit existing policy: start with 'jobs', user_ prefix)
-const uploadPromises = uploadedFiles.map(async (file) => {
-  const safeName = file.name.replace(/[$$  $$]/g, '').replace(/\s/g, '_');
-  const userFolder = `user_${session.user.id}`;  // NEW: Prefix to match policy
-  const path = `jobs/${userFolder}/phase1a/${safeName}`;  // NEW: 'jobs' first (allowed), then user_, then phase/file
-  const { data, error: uploadError } = await supabase.storage
-    .from('enki-storage')
-    .upload(path, file, {
-      upsert: true,
-      contentType: file.type,
-      metadata: { phase: '1A', type: 'specs', jobId: session.user.id }  // Retained for DB linking
-    });
-  if (uploadError) throw uploadError;
-  return data.path;
-});
-await Promise.all(uploadPromises);
-toast.success('Files uploaded successfully!');
+      const userId = session.user.id;
+      const fileUrls: string[] = [];
 
-      // Parse with focus (Updated: Explicit 'setup' for pre-bid risks)
-      const parsedRisks = parseFiles(uploadedFiles, { focus: 'setup' }); // e.g., "Risk: VOC compliance violation in CA"
+      // Upload to Supabase storage and get signed URLs
+      for (const file of acceptedFiles) {
+        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
+        const path = `jobs/user_${userId}/phase1a/${safeName}`; // Adjust folder per phase
+
+        const { data, error: uploadError } = await supabase.storage
+          .from('enki-storage')
+          .upload(path, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Get signed URL for Grok to access (expires in 1 hour for dev; adjust as needed)
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from('enki-storage')
+          .createSignedUrl(path, 3600); // 1 hour expiry
+
+        if (signedError) throw signedError;
+
+        fileUrls.push(signedData.signedUrl);
+      }
+
+      // Parse with Grok via server action (pass URLs and focus)
+      const parsedRisks = await parseFiles(fileUrls, { focus: 'setup' }); // Adjust focus per phase, e.g., 'setup' for 1A
+
       setRisks(parsedRisks);
 
-      // Generate with context (Updated: Jurisdiction for waterproofing regs)
-      const generatedExhibits = await generateFromRisks(parsedRisks, { type: 'exhibits', context: { jurisdiction: 'CA' } });
-      setExhibits(generatedExhibits);
+      // Generate from risks (existing logic)
+      const generated = await generateFromRisks(parsedRisks, { type: 'exhibits' }); // Adjust per phase
+      setExhibits(generated);
 
-      // To-Do stub (NEW: Feed high risks to 'jobs.to_do_items' JSONB)
-      const highRisks = parsedRisks.filter(risk => risk.includes('high')); // Simple filter; real: Threshold logic
-      if (highRisks.length > 0) {
-        // Stub insert (real: await supabase.from('jobs').update({ to_do_items: [...] }))
-        console.log('Stub: Inserting to jobs.to_do_items:', highRisks.map(r => ({ category: 'pre-bid', importance: 'high', description: r })));
-        toast.info('High risks flagged to To-Do items.');
-      }
+      toast.success('Files uploaded and parsed successfully!');
+
     } catch (err) {
-      setError(err.message || "An unexpected error occurred.");
-      toast.error('Upload/processing failed.');
+      setError(err.message);
+      toast.error('Upload/parsing failed: ' + err.message);
     }
   };
 
