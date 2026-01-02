@@ -1,90 +1,93 @@
 'use client'; // Client component for hooks and interactivity
 
-import { useState, useEffect } from 'react'; // For state and session effect
-import { useRouter } from 'next/navigation'; // For navigation/redirect
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // shadcn/ui components
-import { Button } from '@/components/ui/button'; // shadcn/ui button
-import { Alert, AlertDescription } from '@/components/ui/alert'; // shadcn/ui alert for exhibits
-import { generateFromRisks } from '@/lib/ai-generate'; // AI generate stub
-import { parseFiles } from '@/lib/ai-parse'; // AI parse stub
-import UploadZone from '@/components/forms/upload-zone'; // Drag-drop component
-import { useSupabase } from '@/lib/supabase'; // Singleton hook for Supabase client
-import toast from "react-hot-toast"; // For success/error alerts
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSupabase } from '@/lib/supabase';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import UploadZone from '@/components/forms/upload-zone';
+import { parseFiles } from '@/lib/ai-parse';
+import { generateFromRisks } from '@/lib/ai-generate';
+import toast from "react-hot-toast";
+import { v4 as uuidv4 } from 'uuid'; // Add this import if not present; install via npm install uuid @types/uuid
 
 export default function Phase1B() {
-  const [files, setFiles] = useState<File[]>([]); // State for uploaded files
-  const [generatedExhibits, setGeneratedExhibits] = useState<string[]>([]); // State for generated To-Do clauses
-  const [loading, setLoading] = useState(false); // State for loading indicator
-  const [session, setSession] = useState(null); // State for Supabase session
-  const router = useRouter(); // For navigation/redirect
-  const supabase = useSupabase(); // Supabase client
+  const [files, setFiles] = useState<File[]>([]);
+  const [risks, setRisks] = useState<string[]>([]);
+  const [generatedExhibits, setGeneratedExhibits] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [session, setSession] = useState(null);
+  const router = useRouter();
+  const supabase = useSupabase();
 
-  // UseEffect to fetch session and handle auth changes (aligned with Phase 1 auth pattern)
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      if (!session) router.push('/'); // Redirect if not authenticated
+      if (!session) router.push('/');
     };
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
     return () => authListener.subscription.unsubscribe();
-  }, [supabase, router]);
+  }, [router, supabase]);
 
-  if (!session) return <div>Loading session...</div>; // Handle null session during load
-
-  // Handle upload function (integrated from test page: upload to bucket with metadata, debug logs)
-  const handleUpload = async (uploadedFiles: File[]) => {
-    setFiles(uploadedFiles);
+  const handleUpload = async (acceptedFiles: File[]) => {
+    setFiles(acceptedFiles);
     setLoading(true);
-    try {
-      // Debug: Log session uid for RLS/ownership check
-      console.log('Debug: User ID:', session.user.id);
+    setError(null);
+    setRisks([]);
+    setGeneratedExhibits([]);
 
-      // Upload loop for multiple files (aligned with Phase 1 pattern)
-      const uploadPromises = uploadedFiles.map(async (file) => {
-        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_'); // Sanitize file name
-        const userFolder = `user_${session.user.id}`; // User folder for ownership
-        const path = `jobs/${userFolder}/phase1b/${safeName}`; // Path structure (change here to test different formats)
-        console.log('Debug: Upload path:', path); // Debug: Verify path
-        console.log('Debug: File type:', file.type); // Debug: Verify contentType
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session - sign in required.");
+      const userId = session.user.id;
+
+      const fileUrls: string[] = [];
+
+      for (const file of acceptedFiles) {
+        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
+        const path = `jobs/user_${userId}/phase1b/${safeName}`;
 
         const { data, error: uploadError } = await supabase.storage
-          .from('enki-storage') // Working bucket
-          .upload(path, file, {
-            upsert: true, // Allow overwrite if file exists
-            contentType: file.type, // Auto-set MIME type
-            metadata: { phase: '1B', type: 'essentials', jobId: session.user.id } // Metadata for DB linking (blueprint-aligned)
-          });
+          .from('enki-storage')
+          .upload(path, file, { upsert: true, contentType: 'application/pdf' });
 
-        if (uploadError) {
-          console.error('Debug: Upload Error Details:', uploadError.message, uploadError.status, uploadError.body); // Full error log
-          throw uploadError;
-        }
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-        console.log('Debug: Upload Success Data:', data); // Debug: Confirm response
-        return data.path;
+        const { data: { signedUrl } } = await supabase.storage
+          .from('enki-storage')
+          .createSignedUrl(path, 3600);
+        if (!signedUrl) throw new Error('Failed to get signed URL');
+        fileUrls.push(signedUrl);
+      }
+
+      const parsedRisks = await parseFiles(fileUrls, { focus: 'setup' });
+      setRisks(parsedRisks);
+
+      const generated = await generateFromRisks(parsedRisks, {
+        type: 'exhibits',
+        context: { jurisdiction: 'CA', materialType: 'membrane' }
       });
-      await Promise.all(uploadPromises);
-      toast.success('Documents uploaded!');
+      setGeneratedExhibits(generated);
 
-      // Parse misses as risks (Updated: 'setup' focus for essentials extraction)
-      const mockRisks = parseFiles(uploadedFiles, { focus: 'setup' }); // e.g., "Miss: GC contact undefined"
-      console.log('Extracted misses:', mockRisks);
+      const jobId = uuidv4(); // Generate new UUID for testing; in production, use existing or query
+      const { error: insertError } = await supabase.from('jobs').upsert({
+        id: jobId,
+        owner_id: userId,
+        essentials: { milestones: 'Extracted milestones...', gc_contacts: 'GC details...' }, // Stub; enhance with parsed data
+        to_do_items: generated.map(item => ({ description: item, priority: 'high' }))
+      });
+      if (insertError) throw new Error(`DB insert failed: ${insertError.message}`);
 
-      // Generate To-Do/Exhibits (Updated: Context for waterproofing essentials)
-      const exhibits = await generateFromRisks(mockRisks, { type: 'exhibits', context: { jurisdiction: 'CA' } });
-      setGeneratedExhibits(exhibits);
-
-      // To-Do stub (NEW: Insert misses to 'jobs.to_do_items' JSONB)
-      const toDos = mockRisks.map(r => ({ category: 'job-setup', importance: 'medium', description: r }));
-      // Stub insert (real: await supabase.from('jobs').update({ to_do_items: [...existing, ...toDos] }))
-      console.log('Stub: Adding to jobs.to_do_items:', toDos);
-      toast('To-Do items generated for misses.', { icon: 'ℹ️' }); // FIXED: Custom info-style toast (no built-in .info)
+      toast.success('Upload, parse, and generation complete! To-Do items saved to DB.');
     } catch (error) {
-      console.error('Detailed Supabase Error:', error.message, error.status, error.body); // Full error log for 400
-      toast.error('Upload failed: ' + (error.message || 'Check console'));
+      console.error('Error in handleUpload:', error);
+      setError(error.message || 'An unexpected error occurred.');
+      toast.error('Error: ' + (error.message || 'Check console for details'));
     } finally {
       setLoading(false);
     }
@@ -99,7 +102,7 @@ export default function Phase1B() {
         </CardHeader>
         <CardContent className="space-y-4">
           <UploadZone onUpload={handleUpload} />
-          {loading && <div>Loading...</div>} // Loading indicator
+          {loading && <div>Loading... (Uploading and parsing with AI)</div>}
           {files.length > 0 && (
             <div>
               <h3 className="font-semibold">Selected Files:</h3>
@@ -108,9 +111,16 @@ export default function Phase1B() {
               </ul>
             </div>
           )}
-          <Button onClick={() => handleUpload(files)} disabled={loading || files.length === 0}>
-            {loading ? 'Processing...' : 'Extract Essentials & Generate To-Do'}
-          </Button>
+          {risks.length > 0 && (
+            <div className="mt-4 space-y-4">
+              <h4 className="text-sm font-medium">Detected Risks/Misses:</h4>
+              {risks.map((risk, idx) => (
+                <Alert key={idx} variant="warning">
+                  <AlertDescription>{risk}</AlertDescription>
+                </Alert>
+              ))}
+            </div>
+          )}
           {generatedExhibits.length > 0 && (
             <div className="mt-4 space-y-4">
               <h4 className="text-sm font-medium">Generated Essentials/To-Do Clauses:</h4>
@@ -121,6 +131,14 @@ export default function Phase1B() {
               ))}
             </div>
           )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Button onClick={() => handleUpload(files)} disabled={loading || files.length === 0}>
+            {loading ? 'Processing...' : 'Extract Essentials & Generate To-Do'}
+          </Button>
           <Button className="mt-6" variant="outline" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
         </CardContent>
       </Card>
