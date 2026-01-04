@@ -12,14 +12,14 @@ import { parseFiles } from '@/lib/ai-parse';
 import { generateFromRisks } from '@/lib/ai-generate';
 import { AlertCircle } from 'lucide-react';
 import toast from "react-hot-toast";
-import { v4 as uuidv4 } from 'uuid'; // Reuse from Phase 1B
+import { v4 as uuidv4 } from 'uuid';
 
-export default function Phase1C() {
+export default function Phase1D() {
   const [session, setSession] = useState(null);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [parsedProducts, setParsedProducts] = useState<any[]>([]); // Structured extractedData
-  const [generatedMatches, setGeneratedMatches] = useState<string[]>([]);
+  const [risks, setRisks] = useState<string[]>([]);
+  const [generatedItems, setGeneratedItems] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = useSupabase();
@@ -40,8 +40,8 @@ export default function Phase1C() {
     setFiles(acceptedFiles);
     setUploading(true);
     setError(null);
-    setParsedProducts([]);
-    setGeneratedMatches([]);
+    setRisks([]);
+    setGeneratedItems([]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,7 +52,7 @@ export default function Phase1C() {
 
       for (const file of acceptedFiles) {
         const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
-        const path = `jobs/user_${userId}/phase1c/${safeName}`;
+        const path = `jobs/user_${userId}/phase1d/${safeName}`;
 
         const { data, error: uploadError } = await supabase.storage
           .from('enki-storage')
@@ -67,32 +67,21 @@ export default function Phase1C() {
         fileUrls.push(signedUrl);
       }
 
-      // Parse with 'pds' focus for structured extractedData (array of objects)
-      const extractedProducts = await parseFiles(fileUrls, { focus: 'pds' });
-      console.log('Grok Parsed Products:', extractedProducts); // Log raw AI output
-      setParsedProducts(extractedProducts);
+      const parsedRisks = await parseFiles(fileUrls, { focus: 'kickoff' });
+      setRisks(parsedRisks);
 
-      // Generate matches/risks/alternates notes from extracted (treat as 'risks' for generation)
-      const generated = await generateFromRisks(
-        extractedProducts.map(prod => `Product: ${prod.name}, VOC: ${prod.voc_level}, Lead Time: ${prod.lead_time_avg}`), // Convert to risk-like strings
-        { type: 'notes', context: { jurisdiction: 'CA', materialType: 'membrane' } } // Waterproofing context for VOC/compatibility
-      );
-      console.log('Generated Matches:', generated); // Log notes/risks
-      setGeneratedMatches(generated);
+      const generated = await generateFromRisks(parsedRisks, { type: 'clauses' });
+      setGeneratedItems(generated);
 
-      // Batch upsert to 'products' table (UUID for id, map fields)
-      const productsToInsert = extractedProducts.map(prod => ({
-        id: uuidv4(),
-        manufacturer: prod.manufacturer,
-        name: prod.name,
-        voc_level: prod.voc_level,
-        lead_time_avg: prod.lead_time_avg,
-        compatibilities: prod.compatibility // JSONB array
-      }));
-      const { error: insertError } = await supabase.from('products').upsert(productsToInsert);
+      const jobId = uuidv4();
+      const { error: insertError } = await supabase.from('jobs').upsert({
+        id: jobId,
+        owner_id: userId,
+        // Add phase-specific fields if needed
+      });
       if (insertError) throw new Error(`DB insert failed: ${insertError.message}`);
 
-      toast.success('Upload, parse, and generation complete! Products saved to DB.');
+      toast.success('Upload, parse, and generation complete! Items saved to DB.');
     } catch (error) {
       console.error('Error in handleUpload:', error);
       setError(error.message || 'An unexpected error occurred.');
@@ -106,8 +95,8 @@ export default function Phase1C() {
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
       <Card className="w-[600px]">
         <CardHeader>
-          <CardTitle>Product DB/Spec Matching (1C)</CardTitle>
-          <CardDescription>Upload PDS PDFs for structured extraction and spec matching/risks generation.</CardDescription>
+          <CardTitle>Kickoff/Compliance (1D)</CardTitle>
+          <CardDescription>Upload SSSP/RFI needs for misses parse and RFI/SSSP generation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <UploadZone onUpload={handleUpload} />
@@ -119,51 +108,43 @@ export default function Phase1C() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          {parsedProducts.length > 0 && (
+          {risks.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Extracted Products</h3>
+              <h3 className="text-lg font-semibold">Detected Risks/Misses</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Manufacturer</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>VOC Level</TableHead>
-                    <TableHead>Lead Time (weeks)</TableHead>
-                    <TableHead>Compatibility</TableHead>
+                    <TableHead>Risk</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {parsedProducts.map((product, index) => (
+                  {risks.map((risk, index) => (
                     <TableRow key={index}>
-                      <TableCell>{product.manufacturer}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.voc_level}</TableCell>
-                      <TableCell>{product.lead_time_avg}</TableCell>
-                      <TableCell>{product.compatibility.join(', ')}</TableCell>
+                      <TableCell>{risk}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
           )}
-          {generatedMatches.length > 0 && (
+          {generatedItems.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Generated Spec Matches/Risks/Alternates</h3>
+              <h3 className="text-lg font-semibold">Generated Items</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Match/Risk Note</TableHead>
+                    <TableHead>Item</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {generatedMatches.map((match, index) => (
+                  {generatedItems.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell>{match}</TableCell>
+                      <TableCell>{item}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              <Button className="mt-4" onClick={() => alert('Stub: Email vendor for quantities/stock; loop until confirmed')}>One-Click Vendor Email Loop</Button>
+              <Button className="mt-4" onClick={() => alert('Stub: Email GC with generated items')}>One-Click GC Email</Button>
             </div>
           )}
           <Button className="mt-6" variant="outline" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
