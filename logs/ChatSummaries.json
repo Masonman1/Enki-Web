@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "lastUpdated": "2026-01-03",
-  "totalChats": 6,
+  "totalChats": 8,
   "summaries": [
     {
       "chatId": 1,
@@ -269,6 +269,95 @@
         "All phases: Upload/parse/AI assist/generate/one-click; complement tools like GC portals.",
         "Waterproofing priorities: Substrate/sequencing risks, time-saving on paperwork.",
         "Architecture: Next.js/React with Supabase; no mobile/voice in Phase 1."
+      ]
+    },
+    {
+      "chatId": 7,
+      "date": "2026-01-03",
+      "overview": "Optimized Enki workspace for Phase 1 dev: Built/retroactively summarized chat log in ChatSummaries.json, migrated to Supabase 'dev_logs' table with RLS/unique constraints, fixed upload script issues (env loading, UUID, constraints), resolved dashboard errors (key props, React imports, module warnings), and enhanced UI with error handling/alerts.",
+      "keyAchievements": [
+        "Assembled ordered chat summaries JSON from raw files, committed to Git.",
+        "Created 'dev_logs' table SQL with RLS/policies/triggers for dynamic storage.",
+        "Fixed upload-logs.ts: Dotenv path, debug logs, service key seeding, UUID replacement.",
+        "Updated package.json/tailwind.config.ts to ESM for warning-free dev.",
+        "Refined dashboard: Keyed fragments, React import, fetchError alerts for robust rendering."
+      ],
+      "decisionsMade": [
+        "Use service key for seeding to bypass session/RLS in scripts; anon for client fetches.",
+        "Enforce unique user_id constraint for upserts, aligning with blueprint's no-deletes.",
+        "Keep ESM for performance in scripts/UI, reusable for ai-actions.ts stubs.",
+        "Prioritize console clean-up for Phase 1 UI reliability (e.g., tables in logs/risks)."
+      ],
+      "openTodos": [
+        {
+          "description": "Run npm run lint --fix and manually resolve remaining errors (e.g., explicit any in ai-actions.ts, setState in auth-wrapper.tsx).",
+          "priority": "high"
+        },
+        {
+          "description": "Add dashboard append button for new summaries (concat jsonb arrays).",
+          "priority": "high"
+        },
+        {
+          "description": "Integrate log queries into ai-assist for context-aware Phase 1 refinements (e.g., pull todos for risks).",
+          "priority": "medium"
+        },
+        {
+          "description": "Test full end-to-end: Upload new chat, fetch/append in dashboard, verify jsonb.",
+          "priority": "high"
+        },
+        {
+          "description": "Expand to Phase 1E: Reuse upload/parse/generate for submittals log/review.",
+          "priority": "low"
+        }
+      ],
+      "nextSteps": [
+        "Fix all lint errors/warnings first: Auto-fix with --fix, manual for types/effects; retest dev server for clean console.",
+        "Test updated dashboard/UI post-lint fixes—confirm no warnings/errors.",
+        "Implement append functionality for dynamic handoffs.",
+        "Proceed to Phase 1E development (submittals: tables/alerts for notes/warranties, one-click email stubs).",
+        "Paste this summary into new chat for continuity."
+      ],
+      "contextReminders": [
+        "Phase 1 desktop/web focus; reuse patterns (upload/parse/generate) for waterproofing risks (e.g., substrates, lead times).",
+        "Supabase RLS/user-owned for security; jsonb for flexible logs/risks/to-dos in 'jobs'/'dev_logs'.",
+        "Expert mode: Prioritize profit/risk protection, time-saving (e.g., one-click in dashboard/scripts)."
+      ]
+    },
+    {
+      "chatId": 8,
+      "date": "2026-01-04",
+      "overview": "Resolved lint errors in ai-actions.ts/auth-wrapper.tsx with types/interfaces; added append button to dashboard for jsonb concatenation with validation/toasts; prepped Phase 1E expansion.",
+      "keyAchievements": [
+        "Typed ai-actions.ts with ParsedContract interface; fixed exhaustive-deps in auth-wrapper.tsx.",
+        "Implemented dashboard append with Supabase upsert and fresh fetch for race-free updates.",
+        "Clean console post-fixes; enhanced UI with Textarea for JSON input."
+      ],
+      "decisionsMade": [
+        "Use jsonb concatenation via upsert for appends; client-side validation before DB hit.",
+        "Keep append manual for now—future: Integrate semantic_conversation_search for auto-summaries."
+      ],
+      "openTodos": [
+        {
+          "description": "Integrate log queries into ai-assist for context-aware Phase 1 refinements (e.g., pull todos for risks).",
+          "priority": "medium"
+        },
+        {
+          "description": "Test full end-to-end: Upload new chat, fetch/append in dashboard, verify jsonb.",
+          "priority": "high"
+        },
+        {
+          "description": "Expand to Phase 1E: Reuse upload/parse/generate for submittals log/review.",
+          "priority": "high"
+        }
+      ],
+      "nextSteps": [
+        "Test append/UI in dev; confirm no errors.",
+        "Enhance Phase 1E with warranty context in ai-generate.ts; add dashboard link.",
+        "Paste this summary into new chat."
+      ],
+      "contextReminders": [
+        "Phase 1 desktop/web focus; reuse patterns for waterproofing risks.",
+        "Supabase RLS/jsonb for flexible logs; expert mode for profit/risk protection."
       ]
     }
   ]

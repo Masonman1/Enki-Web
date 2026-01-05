@@ -1,23 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // For fetch/state
-import React from 'react'; // Added: Required for React.Fragment in keyed maps
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert"; // Added for fetchError (if not already)
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Textarea } from "@/components/ui/textarea"; // NEW: For append form
+import toast from "react-hot-toast"; // For feedback
+import React from 'react'; // Added: For React.Fragment
+
+interface ChatSummary {
+  chatId: number;
+  date: string;
+  overview: string;
+  keyAchievements: string[];
+  decisionsMade: string[];
+  openTodos: { description: string; priority: string }[];
+  nextSteps: string[];
+  contextReminders: string[];
+}
 
 export default function Dashboard() {
   const router = useRouter();
   const supabase = useSupabase();
-  const [summaries, setSummaries] = useState<any[]>([]); // Dynamic fetch
+  const [summaries, setSummaries] = useState<ChatSummary[]>([]);
   const [expandedChats, setExpandedChats] = useState<number[]>([]);
-  const [todoFilter, setTodoFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all'); // For todos
-  const [fetchError, setFetchError] = useState<string | null>(null); // For error handling
+  const [todoFilter, setTodoFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [newSummaryJson, setNewSummaryJson] = useState<string>(''); // NEW: For append
+  const [showAppendForm, setShowAppendForm] = useState(false); // NEW: Toggle form
 
   useEffect(() => {
     async function fetchLogs() {
@@ -34,7 +47,7 @@ export default function Dashboard() {
           .single();
 
         if (error) throw error;
-        setSummaries(data?.summaries || []);
+        setSummaries((data?.summaries || []) as ChatSummary[]);
       } catch (err) {
         setFetchError('Failed to fetch logs: ' + (err as Error).message);
       }
@@ -43,87 +56,129 @@ export default function Dashboard() {
   }, [supabase]);
 
   const toggleExpand = (chatId: number) => {
-    setExpandedChats((prev) =>
-      prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId]
-    );
-  };
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+    setExpandedChats(prev => prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]);
   };
 
   const filteredTodos = () => {
-    return summaries.flatMap((chat: any) =>
-      chat.openTodos.filter((todo: any) => todoFilter === 'all' || todo.priority === todoFilter)
-    );
+    return summaries.flatMap(summary => summary.openTodos).filter(todo => todoFilter === 'all' || todo.priority === todoFilter);
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/");
+    router.push('/');
   };
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  // NEW: Append handler - Parse JSON, concat, upsert
+  const handleAppendSummary = async () => {
+    try {
+      const newSummary: ChatSummary = JSON.parse(newSummaryJson);
+      const updatedSummaries = [...summaries, newSummary];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Auth required');
+
+      const { error } = await supabase.from('dev_logs')
+        .upsert({ user_id: user.id, summaries: updatedSummaries }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      setSummaries(updatedSummaries);
+      setNewSummaryJson('');
+      setShowAppendForm(false);
+      toast.success('Summary appended!');
+    } catch (err) {
+      toast.error('Append failed: ' + (err as Error).message);
+    }
+  };
+
+  if (fetchError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Alert variant="destructive"><AlertDescription>{fetchError}</AlertDescription></Alert>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <Card className="w-[600px]">
+    <div className="container mx-auto p-4">
+      <Card>
         <CardHeader>
-          <CardTitle>PM Dashboard</CardTitle>
-          <CardDescription>Overview of active jobs, risks, and Phase 1 workflows for waterproofing PM efficiency.</CardDescription>
+          <CardTitle>Development Dashboard</CardTitle>
+          <CardDescription>Chat summaries, open todos, and phase navigation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p>Stub: Active Jobs - 3 | High Risks - 2 (e.g., substrate mismatches in submittals, lead time delays in procurement)</p>
-          <div>
-            <h3 className="text-lg font-semibold">Navigate to Phase 1 Workflows</h3>
-            <div className="flex flex-col space-y-2 mt-2">
-              <Button onClick={() => router.push('/phase1a')}>Contract Protection (1A)</Button>
-              <Button onClick={() => router.push('/phase1b')}>New Job Setup Wizard (1B)</Button>
-              <Button onClick={() => router.push('/phase1c')}>Product DB/Spec Matching (1C)</Button>
-              <Button onClick={() => router.push('/phase1d')}>Kickoff/Compliance (1D)</Button>
-              <Button onClick={() => router.push('/phase1e')}>Submittals Log/Review (1E)</Button>
-              <Button onClick={() => router.push('/phase1f')}>Scheduling/Progress (1F)</Button>
-              <Button onClick={() => router.push('/phase1g')}>Change Orders (1G)</Button>
-              <Button onClick={() => router.push('/phase1h')}>Procurement (1H)</Button>
-              <Button onClick={() => router.push('/phase1i')}>Vendor Invoice Review (1I)</Button>
-              <Button onClick={() => router.push('/phase1j')}>Payment Apps & Billing (1J)</Button>
-              <Button onClick={() => router.push('/phase1k')}>Closeout Automation (1K)</Button>
-            </div>
+          {/* NEW: Phase Navigation Grid */}
+          <div className="grid grid-cols-3 gap-4">
+            <Button onClick={() => router.push('/phase1a')}>1A: Contract Protection</Button>
+            <Button onClick={() => router.push('/phase1b')}>1B: Job Setup</Button>
+            <Button onClick={() => router.push('/phase1c')}>1C: Compliance</Button>
+            <Button onClick={() => router.push('/phase1d')}>1D: RFIs</Button>
+            <Button onClick={() => router.push('/phase1e')}>1E: Submittals Log</Button>
+            <Button onClick={() => router.push('/phase1f')}>1F: Scheduling</Button>
+            <Button onClick={() => router.push('/phase1g')}>1G: Change Orders</Button>
+            <Button onClick={() => router.push('/phase1h')}>1H: Procurement</Button>
+            <Button onClick={() => router.push('/phase1i')}>1I: Invoice Review</Button>
+            <Button onClick={() => router.push('/phase1j')}>1J: Billing</Button>
+            <Button onClick={() => router.push('/phase1k')}>1K: Closeout</Button>
           </div>
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">Dev Chat Log</h3>
-            {fetchError && <Alert variant="destructive"><AlertDescription>{fetchError}</AlertDescription></Alert>}
+
+          {/* NEW: Append Button/Form */}
+          <div>
+            <Button onClick={() => setShowAppendForm(!showAppendForm)}>Append New Summary</Button>
+            {showAppendForm && (
+              <div className="mt-4 space-y-2">
+                <Textarea
+                  placeholder="Paste new summary JSON here..."
+                  value={newSummaryJson}
+                  onChange={(e) => setNewSummaryJson(e.target.value)}
+                  rows={10}
+                />
+                <Button onClick={handleAppendSummary}>Submit Append</Button>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold">Chat Summaries</h3>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead>Chat ID</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Overview</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {summaries.map((chat: any) => (
-                  <React.Fragment key={chat.chatId}>
+                {summaries.map((summary) => (
+                  <React.Fragment key={summary.chatId}>
                     <TableRow>
-                      <TableCell>{chat.chatId}</TableCell>
-                      <TableCell>{chat.date}</TableCell>
-                      <TableCell>{chat.overview}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" onClick={() => toggleExpand(chat.chatId)}>
-                          {expandedChats.includes(chat.chatId) ? 'Collapse' : 'Expand'}
+                      <TableCell>{summary.chatId}</TableCell>
+                      <TableCell>{summary.date}</TableCell>
+                      <TableCell>{summary.overview}</TableCell>
+                      <TableCell className="space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => toggleExpand(summary.chatId)}>
+                          {expandedChats.includes(summary.chatId) ? 'Collapse' : 'Expand'}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleCopy(JSON.stringify(summary, null, 2))}>
+                          Copy Summary
                         </Button>
                       </TableCell>
                     </TableRow>
-                    {expandedChats.includes(chat.chatId) && (
+                    {expandedChats.includes(summary.chatId) && (
                       <TableRow>
                         <TableCell colSpan={4}>
-                          <div className="p-4 bg-muted rounded-md">
-                            <h4 className="font-medium">Full Summary</h4>
-                            <SyntaxHighlighter language="json" style={oneDark}>
-                              {JSON.stringify(chat, null, 2)}
-                            </SyntaxHighlighter>
-                            <Button className="mt-2" onClick={() => handleCopy(JSON.stringify(chat, null, 2))}>
-                              Copy Summary
-                            </Button>
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium">Key Achievements</h4>
+                              <ul className="list-disc pl-5">
+                                {summary.keyAchievements.map((ach, idx) => <li key={idx}>{ach}</li>)}
+                              </ul>
+                            </div>
+                            {/* Similar for other sections; braced comments: Expanded details */}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -133,7 +188,8 @@ export default function Dashboard() {
               </TableBody>
             </Table>
           </div>
-          <div className="mt-6"> {/* Open Dev Todos section, if added */}
+
+          <div className="mt-6">
             <h3 className="text-lg font-semibold">Open Dev Todos</h3>
             <div className="space-x-2 mb-2">
               <Button variant={todoFilter === 'all' ? 'default' : 'outline'} onClick={() => setTodoFilter('all')}>All</Button>
@@ -149,7 +205,7 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTodos().map((todo: any, idx: number) => (
+                {filteredTodos().map((todo, idx) => (
                   <TableRow key={idx}>
                     <TableCell>{todo.description}</TableCell>
                     <TableCell>{todo.priority}</TableCell>

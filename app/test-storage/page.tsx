@@ -65,7 +65,7 @@ export default function TestStorage() {
       toast.success('Upload successful! Check console for details.');
     } catch (error) {
       console.error('Detailed Supabase Error:', error); // Log full object for body
-        if (error.body) console.log('Error Body:', error.body); // Specific for 400 message
+      if (error.body) console.log('Error Body:', error.body); // Specific for 400 message
       toast.error('Upload failed: ' + (error.message || 'Check console'));
     } finally {
       setLoading(false);
@@ -81,7 +81,7 @@ export default function TestStorage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <UploadZone onUpload={handleUpload} />
-          {loading && <div>Loading...</div>} // Loading indicator
+          {loading && <div>Loading...</div>} {/* Loading indicator */}
           {files.length > 0 && (
             <div>
               <h3 className="font-semibold">Selected Files:</h3>
