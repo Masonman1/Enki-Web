@@ -18,7 +18,7 @@ export default function Phase1C() {
   const [session, setSession] = useState(null);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [parsedProducts, setParsedProducts] = useState<any[]>([]); // Structured extractedData
+  const [parsedProducts, setParsedProducts] = useState<{ manufacturer: string; name: string; voc_level: number; lead_time_avg: number; compatibility: string[] }[]>([]);  // Specific type for product objects
   const [generatedMatches, setGeneratedMatches] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
