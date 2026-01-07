@@ -53,18 +53,18 @@ export default function Dashboard() {
         if (error) throw error;
         if (data && Array.isArray(data.summaries)) {
           const normalized = data.summaries
-            .filter((s: any) => s && s.chatId != null)
-            .map((s: any) => ({
-              ...s,
-              chatId: String(s.chatId),
-              parentChatId: s.parentChatId ? String(s.parentChatId) : null,
-              date: s.date || new Date().toISOString().split('T')[0],
+            .filter((s: unknown) => s && (s as { chatId?: unknown }).chatId != null)
+            .map((s: unknown) => ({
+              ...(s as ChatSummary),
+              chatId: String((s as ChatSummary).chatId),
+              parentChatId: (s as ChatSummary).parentChatId ? String((s as ChatSummary).parentChatId) : null,
+              date: (s as ChatSummary).date || new Date().toISOString().split('T')[0],
             }));
           setSummaries(normalized);
           console.log('Fetched summaries:', normalized);
         }
-      } catch (err: any) {
-        setFetchError(err.message || 'Failed to fetch logs');
+      } catch (err: unknown) {
+        setFetchError((err as Error).message || 'Failed to fetch logs');
       }
     }
     fetchLogs();
@@ -145,8 +145,8 @@ export default function Dashboard() {
       setNewSummaryJson('');
       setShowAppendForm(false);
       toast.success('Summary appended successfully');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to append summary');
+    } catch (err: unknown) {
+      toast.error((err as Error).message || 'Failed to append summary');
     }
   };
 
@@ -169,8 +169,8 @@ export default function Dashboard() {
 
       setSummaries(updatedSummaries);
       toast.success('Summary deleted');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete summary');
+    } catch (err: unknown) {
+      toast.error((err as Error).message || 'Failed to delete summary');
     }
   };
 
