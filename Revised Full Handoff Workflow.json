@@ -1,0 +1,292 @@
+{
+  "fullHandoffPlan": [
+    {
+      "actor": "AI",
+      "type": "generate",
+      "params": {
+        "output": "bulleted list of affected file base names"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "prompt",
+      "params": {
+        "text": "Upload listed files now. Continue when finished? (Yes/Issue)"
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Upload files and respond complete or report issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "execute",
+      "params": {
+        "tool": "code_execution",
+        "code": "auto-validate uploaded diffs/snippets for syntax/type issues"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "no errors",
+        "true": {
+          "jump": 12
+        },
+        "false": {
+          "action": "alert with brief bullet list of errors and affected files"
+        }
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "loop_start",
+      "params": {
+        "for": "each affected file",
+        "action": "show full revised code to fix (consolidate errors into one code block); prompt \"Apply this fix to [file]. Respond complete or report issue.\""
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Confirms code for file updated or reports issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "execute",
+      "params": {
+        "tool": "code_execution",
+        "code": "re-run validation"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "errors persist",
+        "true": {
+          "loop_back": 5
+        },
+        "false": {
+          "action": "prompt \"Update the fixed files in your workspace. Respond complete or report issue.\""
+        }
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Updates files in workspace, responds complete or reports issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "execute",
+      "params": {
+        "tool": "code_execution",
+        "code": "auto-lint validated files for issues"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "no errors",
+        "true": {
+          "jump": 20
+        },
+        "false": {
+          "action": "alert with brief bullet list of errors and affected files"
+        }
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "loop_start",
+      "params": {
+        "for": "each affected file",
+        "action": "show full revised code to fix (consolidate lint errors into one code block); prompt \"Apply this fix to [file]. Respond complete or report issue.\""
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Confirms code for file updated or reports issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "execute",
+      "params": {
+        "tool": "code_execution",
+        "code": "re-run lint"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "errors persist",
+        "true": {
+          "loop_back": 13
+        },
+        "false": {
+          "action": "prompt \"Update the fixed files in your workspace. Respond complete or report issue.\""
+        }
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Updates files in workspace, responds complete or reports issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "prompt",
+      "params": {
+        "text": "Remind to perform manual lint (e.g., full ESLint/TS checks) and prompt \"Run manual lint and paste the terminal output here? (Or respond 'No errors' if clean)\""
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Performs manual lint, pastes terminal output or responds 'No errors'"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "No errors",
+        "true": {
+          "jump": 29
+        },
+        "false": {
+          "action": "analyze pasted output, alert with brief bullet list based on details and affected files"
+        }
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "loop_start",
+      "params": {
+        "for": "each affected file",
+        "action": "show full revised code to fix (consolidate manual lint errors into one code block); prompt \"Apply this fix to [file]. Respond complete or report issue.\""
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Confirms code for file updated or reports issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "prompt",
+      "params": {
+        "text": "Once all files fixed, prompt \"Update the fixed files in your workspace, then re-run manual lint. Paste new terminal output? (Or 'No errors' if clean)\""
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "errors persist in new output",
+        "true": {
+          "loop_back": 22
+        },
+        "false": {
+          "advance": true
+        }
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Updates files (if needed), re-runs lint, pastes output or 'No errors'"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "generate",
+      "params": {
+        "output": "consolidated Git commands in one code box (single commit/push on branch 'refactor-phase1-flatten')"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "prompt",
+      "params": {
+        "text": "Prompt 'Execute Git commands. Git complete? (Yes/Issue)'"
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Run commands, confirm or report issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "execute",
+      "params": {
+        "tool": "code_execution",
+        "code": "import json\nfrom jsonschema import validate, ValidationError\n\n# Stubbed context (in production: pull from env/prior steps; replace with actual chat data)\ncontext = {\n    'chatId': '17',\n    'date': '2026-01-07',\n    'overview': 'Optimized chat summary schema/generation in handoff workflow: short keys, structured ov, omit empties, human expansion',\n    'keyAchievements': ['Defined efficient schema with short keys/structured ov for AI parsing', 'Updated generation/validation with auto-fixes/truncation for <200 tokens', 'Added human-readable expansion step for dashboard/reviews', 'Simulated/tested workflow; reduced tokens by 17-30%'],\n    'decisionsMade': ['Prioritize structured ov over prose for inference efficiency', 'Omit empties/optional fields to minimize size', 'Integrate formatter in ai-generate.ts for Phase 1 patterns', 'Add verbose_mode flag for backward compat'],\n    'openTodos': [],\n    'nextSteps': ['Test full end-to-end handoff in new chat', 'Validate Supabase upsert for Phase 1 dashboard aggregation'],\n    'contextReminders': ['Enki Phase 1: Complement tools via upload/parse/generate; focus risk reduction/profit protection in PM lifecycle'],\n    'parentChatId': '16',\n    'priorSummaries': [],\n    'incompleteStatus': {'automationsTested': ['schema', 'generation', 'validation', 'expansion', 'simulation'], 'automationsPending': []},\n    'continuationFlag': True\n}\n\n# Minify and structure\nsummary = {\n    'id': context['chatId'],\n    'dt': context['date'],\n    'ov': {\n        'changes': [context['overview'][:100] + '...' if len(context['overview']) > 100 else context['overview']],\n        'branch': 'refactor-phase1-flatten',\n        'files': ['Revised Full Handoff Workflow.json', 'apps_web_lib_schemas_optimized-chat-summary.ts', 'apps_web_lib_ai-generate.ts'],\n        'next_action': context['nextSteps'][0][:100] + '...' if context['nextSteps'] and len(context['nextSteps'][0]) > 100 else context['nextSteps'][0] if context['nextSteps'] else ''\n    },\n    'achvs': [item[:100] for item in context['keyAchievements'][:5]],\n    'decs': [item[:100] for item in context['decisionsMade'][:5]],\n    'nxt': [item[:100] for item in context['nextSteps'][:5]],\n    'ctx': [item[:100] for item in context['contextReminders'][:5]],\n    'pid': context['parentChatId'],\n    'stat': {\n        'tested': context['incompleteStatus']['automationsTested'],\n        'pend': context['incompleteStatus']['automationsPending']\n    },\n    'cont': context['continuationFlag'],\n    'schema_version': 'v2-opt'\n}\n\n# Omit empties\nif context['openTodos']:\n    summary['todos'] = [{'desc': todo['description'], 'pri': todo['priority']} for todo in context['openTodos']]\nif context['priorSummaries']:\n    summary['priors'] = context['priorSummaries']\n\n# Optimized schema\noptimized_schema = {\n  'type': 'object',\n  'properties': {\n    'id': {'type': 'string'},\n    'dt': {'type': 'string'},\n    'ov': {\n      'type': 'object',\n      'properties': {\n        'changes': {'type': 'array', 'items': {'type': 'string'}},\n        'branch': {'type': 'string'},\n        'files': {'type': 'array', 'items': {'type': 'string'}},\n        'next_action': {'type': 'string'}\n      },\n      'required': ['changes', 'next_action']\n    },\n    'achvs': {'type': 'array', 'items': {'type': 'string'}},\n    'decs': {'type': 'array', 'items': {'type': 'string'}},\n    'todos': {\n      'type': 'array',\n      'items': {\n        'type': 'object',\n        'properties': {\n          'desc': {'type': 'string'},\n          'pri': {'type': 'string'}\n        }\n      }\n    },\n    'nxt': {'type': 'array', 'items': {'type': 'string'}},\n    'ctx': {'type': 'array', 'items': {'type': 'string'}},\n    'pid': {'type': ['string', 'null']},\n    'priors': {'type': 'array', 'items': {'type': 'object'}},\n    'stat': {\n      'type': 'object',\n      'properties': {\n        'tested': {'type': 'array', 'items': {'type': 'string'}},\n        'pend': {'type': 'array', 'items': {'type': 'string'}}\n      }\n    },\n    'cont': {'type': 'boolean'},\n    'schema_version': {'type': 'string'}\n  },\n  'required': ['id', 'dt', 'ov', 'achvs', 'decs', 'nxt', 'ctx', 'pid', 'stat', 'cont']\n}\n\n# Validate and fix\ntry:\n    validate(instance=summary, schema=optimized_schema)\nexcept ValidationError as e:\n    for k in ['achvs', 'decs', 'nxt', 'ctx']:\n        if k in summary:\n            summary[k] = [item[:50] for item in summary[k][:3]]\n    if 'ov' in summary and len(summary['ov']['next_action']) > 50:\n        summary['ov']['next_action'] = summary['ov']['next_action'][:47] + '...'\n    if 'todos' in summary and not summary['todos']:\n        del summary['todos']\n    if 'priors' in summary and not summary['priors']:\n        del summary['priors']\n    validate(instance=summary, schema=optimized_schema)\nprint(json.dumps(summary))"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "invalid",
+        "true": {
+          "action": "internal fix and re-validate: Truncate long fields (>100 chars per item, >5 items per array), omit empty arrays/objects (e.g., todos/priors), default missing 'ov' to minimal {changes: [], next_action: ''}, then re-run validation"
+        }
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "generate",
+      "params": {
+        "output": "markdown-formatted human-readable version from optimized JSON (e.g., map short keys to full labels, expand 'ov' to sentences)"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "prompt",
+      "params": {
+        "text": "Summary (optimized JSON): [json] | Human-readable: [prose] | Looks good? (Yes/Issue) (display generated summary for review)"
+      }
+    },
+    {
+      "actor": "User",
+      "type": "action",
+      "params": {
+        "desc": "Review and confirm or report issue"
+      }
+    },
+    {
+      "actor": "AI",
+      "type": "conditional",
+      "params": {
+        "condition": "Yes",
+        "true": {
+          "action": "output 'Handoff complete—paste this summary for next chat'; include optional automation embed if flagged"
+        }
+      }
+    }
+  ]
+}

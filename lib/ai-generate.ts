@@ -37,3 +37,68 @@ export const generateFromRisks = async (risks: string[], options: { type: 'exhib
 // Deprecated aliases for backward compat (remove in future)
 export const generateExhibits = (risks: string[]) => generateFromRisks(risks, { type: 'exhibits' });
 export const generateSubmittals = (risks: string[]) => generateFromRisks(risks, { type: 'clauses' });
+
+import { OptimizedChatSummary } from '@/lib/schemas/optimized-chat-summary';  // Adjust path if needed
+
+interface RawSummaryData {
+  chatId: string;
+  date: string;
+  overview: string;
+  keyAchievements?: string[];
+  decisionsMade?: string[];
+  openTodos?: { description: string; priority: string }[];
+  nextSteps?: string[];
+  contextReminders?: string[];
+  parentChatId: string | null;
+  priorSummaries?: RawSummaryData[];  // Recursive for prior summaries (type-safe over any)
+  incompleteStatus?: { automationsTested: string[]; automationsPending: string[] };
+  continuationFlag: boolean;
+  files_affected?: string[];  // Optional for ov.files
+}
+
+export const minifySummary = (data: RawSummaryData): OptimizedChatSummary => {
+  return {
+    id: data.chatId,
+    dt: data.date,
+    ov: {
+      changes: [data.overview.substring(0, 100) + (data.overview.length > 100 ? '...' : '')],
+      branch: 'refactor-phase1-flatten',  // Derive or hardcoded
+      files: data.files_affected || [],
+      next_action: data.nextSteps?.[0]?.substring(0, 100) + (data.nextSteps?.[0]?.length > 100 ? '...' : '') || ''
+    },
+    achvs: data.keyAchievements?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
+    decs: data.decisionsMade?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
+    nxt: data.nextSteps?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
+    ctx: data.contextReminders?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
+    pid: data.parentChatId,
+    stat: {
+      tested: data.incompleteStatus?.automationsTested || [],
+      pend: data.incompleteStatus?.automationsPending || []
+    },
+    cont: data.continuationFlag,
+    schema_version: 'v2-opt'
+  };
+  // Omit empties manually if needed (TypeScript optionals handle)
+};
+
+export const formatForHuman = (json: OptimizedChatSummary): string => {
+  return `
+**Chat ID:** ${json.id}
+**Date:** ${json.dt}
+**Overview:** Changes: ${json.ov.changes.join(', ')}. Branch: ${json.ov.branch || 'None'}. Files: ${json.ov.files?.join(', ') || 'None'}. Next Action: ${json.ov.next_action}.
+**Key Achievements:**
+${json.achvs.map(item => `- ${item}`).join('\n')}
+**Decisions Made:**
+${json.decs.map(item => `- ${item}`).join('\n')}
+**Open To-Dos:**
+${json.todos ? json.todos.map(todo => `- ${todo.desc} (Priority: ${todo.pri})`).join('\n') : 'None'}
+**Next Steps:**
+${json.nxt.map(item => `- ${item}`).join('\n')}
+**Context Reminders:**
+${json.ctx.map(item => `- ${item}`).join('\n')}
+**Parent Chat ID:** ${json.pid || 'None'}
+**Incomplete Status:** Tested: ${json.stat.tested.join(', ') || 'None'}; Pending: ${json.stat.pend.join(', ') || 'None'}
+**Continuation Flag:** ${json.cont ? 'True' : 'False'}
+**Schema Version:** ${json.schema_version || 'N/A'}
+`;
+};
