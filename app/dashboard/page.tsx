@@ -33,66 +33,31 @@ export default function Dashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [newSummaryJson, setNewSummaryJson] = useState<string>('');
   const [showAppendForm, setShowAppendForm] = useState(false);
-  const [showSummaries, setShowSummaries] = useState(true);
-  const [showTodos, setShowTodos] = useState(true);
+  const [showSummaries, setShowSummaries] = useState(false);
+  const [showTodos, setShowTodos] = useState(false);
 
   useEffect(() => {
     async function fetchLogs() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setFetchError('Auth required - please sign in.');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/');
           return;
         }
-
-        const { data, error } = await supabase.from('dev_logs')
+        const { data, error } = await supabase
+          .from('dev_logs')
           .select('summaries')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .single();
 
-        if (error) throw error;
-        if (data && Array.isArray(data.summaries)) {
-          const normalized = data.summaries
-            .filter((s: unknown) => s && (s as { chatId?: unknown }).chatId != null)
-            .map((s: unknown) => ({
-              ...(s as ChatSummary),
-              chatId: String((s as ChatSummary).chatId),
-              parentChatId: (s as ChatSummary).parentChatId ? String((s as ChatSummary).parentChatId) : null,
-              date: (s as ChatSummary).date || new Date().toISOString().split('T')[0],
-            }));
-          setSummaries(normalized);
-          console.log('Fetched summaries:', normalized);
-        }
-      } catch (err: unknown) {
-        setFetchError((err as Error).message || 'Failed to fetch logs');
+        if (error && error.code !== 'PGRST116') throw error;
+        setSummaries(data?.summaries || []);
+      } catch (err: any) {
+        setFetchError(err.message || 'Failed to fetch logs');
       }
     }
     fetchLogs();
-  }, [supabase]);
-
-  const sortedSummaries = () => {
-    return [...summaries].sort((a, b) => {
-      const safeA = typeof a.chatId === 'string' ? a.chatId : '0';
-      const safeB = typeof b.chatId === 'string' ? b.chatId : '0';
-      const partsA = safeA.split('.').map(Number);
-      const partsB = safeB.split('.').map(Number);
-      const maxLen = Math.max(partsA.length, partsB.length);
-      for (let i = 0; i < maxLen; i++) {
-        const numA = isNaN(partsA[i]) ? 0 : partsA[i];
-        const numB = isNaN(partsB[i]) ? 0 : partsB[i];
-        if (numA !== numB) return numA - numB;
-      }
-      return 0;
-    });
-  };
-
-  const getIndentLevel = (chatId: string) => {
-    return typeof chatId === 'string' ? chatId.split('.').length - 1 : 0;
-  };
-
-  const getTreePrefix = (level: number) => {
-    return '│  '.repeat(Math.max(0, level - 1)) + (level > 0 ? '└─ ' : '');
-  };
+  }, [supabase, router]);
 
   const toggleExpand = (chatId: string) => {
     setExpandedChats(prev =>
@@ -102,9 +67,63 @@ export default function Dashboard() {
 
   const filteredTodos = () => {
     const allTodos = summaries.flatMap(summary => summary.openTodos || []);
-    return todoFilter === 'all'
-      ? allTodos
-      : allTodos.filter(todo => todo.priority.toLowerCase() === todoFilter);
+    return todoFilter === 'all' ? allTodos : allTodos.filter(todo => todo.priority === todoFilter);
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
+  const handleAppendSummary = async () => {
+    try {
+      const newSummary = JSON.parse(newSummaryJson);
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: existing, error: fetchError } = await supabase
+        .from('dev_logs')
+        .select('summaries')
+        .eq('user_id', session?.user.id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      const updatedSummaries = [...(existing?.summaries || []), newSummary];
+
+      const { error } = await supabase
+        .from('dev_logs')
+        .upsert({
+          user_id: session?.user.id,
+          summaries: updatedSummaries
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+
+      setSummaries(updatedSummaries);
+      setNewSummaryJson('');
+      setShowAppendForm(false);
+      toast.success('Summary appended');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to append');
+    }
+  };
+
+  const handleDeleteSummary = async (chatId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const updatedSummaries = summaries.filter(s => s.chatId !== chatId);
+
+      const { error } = await supabase
+        .from('dev_logs')
+        .update({ summaries: updatedSummaries })
+        .eq('user_id', session?.user.id);
+
+      if (error) throw error;
+
+      setSummaries(updatedSummaries);
+      toast.success('Summary deleted');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete');
+    }
   };
 
   const handleLogout = async () => {
@@ -112,142 +131,137 @@ export default function Dashboard() {
     router.push('/');
   };
 
-  const handleAppend = async () => {
-    try {
-      const parsed = JSON.parse(newSummaryJson);
-      if (!parsed.chatId) throw new Error('Invalid JSON: Must be a valid summary object with chatId');
-
-      const normalizedParsed = {
-        ...parsed,
-        chatId: String(parsed.chatId),
-        parentChatId: parsed.parentChatId ? String(parsed.parentChatId) : null,
-        date: parsed.date || new Date().toISOString().split('T')[0],
-      };
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Auth required');
-
-      const { data: existing, error: fetchErr } = await supabase.from('dev_logs')
-        .select('summaries')
-        .eq('user_id', user.id)
-        .single();
-
-      if (fetchErr) throw fetchErr;
-
-      const updatedSummaries = [...(existing?.summaries || []), normalizedParsed];
-
-      const { error } = await supabase.from('dev_logs')
-        .upsert({ user_id: user.id, summaries: updatedSummaries }, { onConflict: 'user_id' });
-
-      if (error) throw error;
-
-      setSummaries([...summaries, normalizedParsed]);
-      setNewSummaryJson('');
-      setShowAppendForm(false);
-      toast.success('Summary appended successfully');
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Failed to append summary');
-    }
-  };
-
-  const handleCopy = (summary: ChatSummary) => {
-    navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
-    toast.success('Summary copied to clipboard');
-  };
-
-  const handleDelete = async (chatId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Auth required');
-
-      const updatedSummaries = summaries.filter(s => s.chatId !== chatId);
-
-      const { error } = await supabase.from('dev_logs')
-        .upsert({ user_id: user.id, summaries: updatedSummaries }, { onConflict: 'user_id' });
-
-      if (error) throw error;
-
-      setSummaries(updatedSummaries);
-      toast.success('Summary deleted');
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Failed to delete summary');
-    }
-  };
-
-  if (fetchError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Alert variant="destructive">
-          <AlertDescription>{fetchError}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-4">
-      <Card>
+    <div className="p-6 flex flex-row gap-4">
+      {/* New Left Navigation Card */}
+      <Card className="w-fit">
         <CardHeader>
-          <CardTitle>Enki Dev Logs Dashboard</CardTitle>
-          <CardDescription>Track chat summaries, achievements, and todos</CardDescription>
+          <CardTitle>Phases</CardTitle>
+          <CardDescription>Navigate to phases</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col">
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1a')}>Phase 1A: Contract Essentials</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1b')}>Phase 1B: Submittals</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1c')}>Phase 1C: Product Specs</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1d')}>Phase 1D: RFIs</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1e')}>Phase 1E: Submittals Log</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1f')}>Phase 1F: Scheduling</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1g')}>Phase 1G: Change Orders</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1h')}>Phase 1H: Procurement</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1i')}>Phase 1I: Invoice Review</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1j')}>Phase 1J: Billing</Button>
+          <Button variant="outline" className="w-full mb-2 text-left" onClick={() => router.push('/phase1k')}>Phase 1K: Closeout</Button>
+        </CardContent>
+      </Card>
+
+      {/* Existing Main Card - Add flex-1 */}
+      <Card className="flex-1">
+        <CardHeader>
+          <CardTitle>Dev Logs Dashboard</CardTitle>
+          <CardDescription>View and manage chat summaries and open To-Dos</CardDescription>
+          <div className="flex space-x-2">
+            <Button onClick={() => setShowAppendForm(!showAppendForm)}>
+              {showAppendForm ? 'Cancel' : 'Append Summary'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <Button onClick={() => setShowAppendForm(!showAppendForm)}>
-              {showAppendForm ? 'Cancel Append' : 'Append New Summary'}
-            </Button>
-            {showAppendForm && (
-              <div className="mt-4 space-y-4">
-                <Textarea
-                  placeholder='Paste JSON summary here (e.g., { "chatId": "1.1", "overview": "..." })'
-                  value={newSummaryJson}
-                  onChange={(e) => setNewSummaryJson(e.target.value)}
-                  rows={6}
-                />
-                <Button onClick={handleAppend}>Submit Append</Button>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-semibold">Chat Summaries</h3>
-              <Button variant="ghost" onClick={() => setShowSummaries(!showSummaries)}>
+          {showAppendForm && (
+            <div className="mb-4">
+              <Textarea
+                value={newSummaryJson}
+                onChange={(e) => setNewSummaryJson(e.target.value)}
+                placeholder="Paste new summary JSON here"
+                rows={10}
+              />
+              <Button onClick={handleAppendSummary} className="mt-2">Append</Button>
+            </div>
+          )}
+          {fetchError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{fetchError}</AlertDescription>
+            </Alert>
+          )}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2 border-b pb-2"> {/* Added border-b for separation */}
+              <Button variant="outline" onClick={() => setShowSummaries(!showSummaries)}>
                 {showSummaries ? 'Collapse' : 'Expand'}
               </Button>
+              <h2 className="text-xl font-semibold">Chat Summaries</h2>
             </div>
-            {showSummaries && (
-              <div className="overflow-y-auto max-h-[500px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead>Chat ID</TableHead><TableHead>Date</TableHead><TableHead>Actions</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedSummaries().map((summary) => {
-                      const isExpanded = expandedChats.includes(summary.chatId);
-                      const level = getIndentLevel(summary.chatId);
-                      const prefix = getTreePrefix(level);
-                      return (
-                        <React.Fragment key={summary.chatId}>
-                          <TableRow><TableCell>{prefix}{summary.chatId}</TableCell><TableCell>{summary.date || 'N/A'}</TableCell><TableCell className="flex space-x-2"><Button variant="ghost" onClick={() => toggleExpand(summary.chatId)}>{isExpanded ? 'Collapse' : 'Expand'}</Button><Button variant="ghost" size="icon" onClick={() => handleCopy(summary)}><Clipboard className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => handleDelete(summary.chatId)}><Trash2 className="h-4 w-4" /></Button></TableCell></TableRow>
-                          {isExpanded && (
-                            <TableRow><TableCell colSpan={3} style={{ paddingLeft: `${(level + 1) * 20}px` }}><div className="space-y-2"><p><strong>Overview:</strong> {summary.overview}</p><div><strong>Key Achievements:</strong><ul className="list-disc pl-5">{summary.keyAchievements.map((item, idx) => (<li key={idx}>{item}</li>))}</ul></div><div><strong>Decisions Made:</strong><ul className="list-disc pl-5">{summary.decisionsMade.map((item, idx) => (<li key={idx}>{item}</li>))}</ul></div><div><strong>Next Steps:</strong><ul className="list-disc pl-5">{summary.nextSteps.map((item, idx) => (<li key={idx}>{item}</li>))}</ul></div><div><strong>Context Reminders:</strong><ul className="list-disc pl-5">{summary.contextReminders.map((item, idx) => (<li key={idx}>{item}</li>))}</ul></div></div></TableCell></TableRow>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            {showSummaries && summaries.map((summary) => (
+              <Card key={summary.chatId} className="mb-4">
+                <CardHeader className="cursor-pointer" onClick={() => toggleExpand(summary.chatId)}>
+                  <CardTitle>Chat {summary.chatId}: {summary.date}</CardTitle>
+                </CardHeader>
+                {expandedChats.includes(summary.chatId) && (
+                  <CardContent>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Overview:</h3>
+                      <p>{summary.overview}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Key Achievements:</h3>
+                      <ul className="list-disc pl-5">
+                        {summary.keyAchievements.map((ach, idx) => <li key={idx}>{ach}</li>)}
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Decisions Made:</h3>
+                      <ul className="list-disc pl-5">
+                        {summary.decisionsMade.map((dec, idx) => <li key={idx}>{dec}</li>)}
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Open To-Dos:</h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Priority</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {summary.openTodos.map((todo, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{todo.description}</TableCell>
+                              <TableCell>{todo.priority}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Next Steps:</h3>
+                      <ul className="list-disc pl-5">
+                        {summary.nextSteps.map((step, idx) => <li key={idx}>{step}</li>)}
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Context Reminders:</h3>
+                      <ul className="list-disc pl-5">
+                        {summary.contextReminders.map((rem, idx) => <li key={idx}>{rem}</li>)}
+                      </ul>
+                    </div>
+                    <div className="flex space-x-2 mt-4">
+                      <Button variant="outline" size="icon" onClick={() => handleCopy(JSON.stringify(summary, null, 2))}>
+                        <Clipboard className="h-4 w-4" />
+                      </Button>
+                      <Button variant="destructive" size="icon" onClick={() => handleDeleteSummary(summary.chatId)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
           </div>
-
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-semibold">Open Dev Todos</h3>
-              <Button variant="ghost" onClick={() => setShowTodos(!showTodos)}>
+          <div>
+            <div className="flex items-center gap-2 mb-2 border-b pb-2"> {/* Added border-b for separation */}
+              <Button variant="outline" onClick={() => setShowTodos(!showTodos)}>
                 {showTodos ? 'Collapse' : 'Expand'}
               </Button>
+              <h2 className="text-xl font-semibold">Open To-Dos (Aggregated)</h2>
             </div>
             {showTodos && (
               <>
