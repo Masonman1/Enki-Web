@@ -52,8 +52,8 @@ export default function Dashboard() {
 
         if (error && error.code !== 'PGRST116') throw error;
         setSummaries(data?.summaries || []);
-      } catch (err: any) {
-        setFetchError(err.message || 'Failed to fetch logs');
+      } catch (err: unknown) {
+        setFetchError(err instanceof Error ? err.message : 'Failed to fetch logs');
       }
     }
     fetchLogs();
@@ -102,8 +102,8 @@ export default function Dashboard() {
       setNewSummaryJson('');
       setShowAppendForm(false);
       toast.success('Summary appended');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to append');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to append');
     }
   };
 
@@ -121,8 +121,8 @@ export default function Dashboard() {
 
       setSummaries(updatedSummaries);
       toast.success('Summary deleted');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
     }
   };
 
@@ -183,7 +183,7 @@ export default function Dashboard() {
             </Alert>
           )}
           <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2 border-b pb-2"> {/* Added border-b for separation */}
+            <div className="flex items-center gap-2 mb-2 border-b pb-2">
               <Button variant="outline" onClick={() => setShowSummaries(!showSummaries)}>
                 {showSummaries ? 'Collapse' : 'Expand'}
               </Button>
@@ -257,7 +257,7 @@ export default function Dashboard() {
             ))}
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-2 border-b pb-2"> {/* Added border-b for separation */}
+            <div className="flex items-center gap-2 mb-2 border-b pb-2">
               <Button variant="outline" onClick={() => setShowTodos(!showTodos)}>
                 {showTodos ? 'Collapse' : 'Expand'}
               </Button>
