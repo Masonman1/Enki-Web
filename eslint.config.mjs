@@ -5,6 +5,7 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      "flattened-attachments/**",
       "out/**",
       "build/**",
       "next-env.d.ts",

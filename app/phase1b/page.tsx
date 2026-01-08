@@ -49,7 +49,7 @@ export default function Phase1B() {
       const fileUrls: string[] = [];
 
       for (const file of acceptedFiles) {
-        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_');
+        const safeName = file.name.replace(/[\\[\\]]/g, '').replace(/\\s/g, '_');
         const path = `jobs/user_${userId}/phase1b/${safeName}`;
 
         const { data, error: uploadError } = await supabase.storage
