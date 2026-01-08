@@ -1,364 +1,54 @@
 {
-  "version": "1.0",
-  "lastUpdated": "2026-01-03",
-  "totalChats": 8,
   "summaries": [
     {
-      "chatId": 1,
-      "date": "2025-12-20",
-      "overview": "Focused on completing Phase 1A (Contract Protection) in Enki: Implemented drag-drop upload for contracts/specs, parsing essentials (e.g., contract number, parties, scope) and risks (e.g., VOC, substrates), generation of To-Do items/exhibits, UI with tables/alerts, and Supabase 'jobs' table integration via JSONB. Addressed errors like null handling, slop detection for unexecuted contracts, and multi-file support.",
-      "keyAchievements": [
-        "Developed full phase1a_page.tsx with UploadZone, parseFiles (Grok API stubs for essentials/risks), generateFromRisks for exhibits/To-Dos.",
-        "Fixed parsing issues: Slop/riders detection, multi-page extraction, scanned PDF skips, null guards in UI (e.g., toLocaleString).",
-        "UI enhancements: Tables for risks/To-Dos/exhibits, alerts for essentials, toasts for feedback.",
-        "DB alignment: Upsert to 'jobs' (essentials JSONB, to_do_items array), file storage paths tied to user_id/phase1a."
+      "id": "18",
+      "dt": "2026-01-07",
+      "ov": {
+        "changes": [
+          "Implemented optimized chat summary schema/generation: short keys, structured ov, omit empties, human expansion. Resolved lint/ts-node errors in ai-generate.ts/optimized-chat-summary.ts for Phase 1 verification."
+        ],
+        "branch": "refactor-phase1-flatten",
+        "files": [
+          "Revised Full Handoff Workflow.json",
+          "optimized-chat-summary.ts",
+          "ai-generate.ts",
+          "tsconfig.json"
+        ],
+        "next_action": "Test full end-to-end handoff in new chat: Paste this summary, validate Supabase upsert/dashboard aggregation for Phase 1 To-Do/risk features."
+      },
+      "achvs": [
+        "Defined/updated schema with recursive types for priors (type-safe).",
+        "Added minifySummary/formatForHuman in ai-generate.ts with truncation/omissions for efficiency.",
+        "Fixed lint errors (no-explicit-any, parsing) and ts-node resolution (aliases/extensions/baseUrl).",
+        "Verified test-summary.ts runs successfully, confirming parse/generate pattern."
       ],
-      "decisionsMade": [
-        "Reuse patterns: Upload → parse (focus='essentials/risks') → generate (exhibits/To-Dos) → one-click stubs.",
-        "Waterproofing-specific: Risks include sequencing/lead times/VOC/substrates; optional specs for combined parsing.",
-        "Error handling: Warnings for slop/incomplete, no full scanned PDF support in Phase 1.",
-        "Architecture: Expert mode, Next.js/React with Supabase; no mobile/voice."
+      "decs": [
+        "Use relative imports/extensions for ts-node compatibility in dev scripts.",
+        "Add baseUrl/allowImportingTsExtensions in tsconfig.json for alias/extension support.",
+        "Type-only imports for interfaces to avoid runtime errors.",
+        "Flatten schemas to lib/ for simpler paths, reducing nested resolution risks."
       ],
-      "openTodos": [
-        {
-          "description": "Integrate optional specs upload for enhanced risks (e.g., VOC per jurisdiction).",
-          "priority": "medium"
-        },
-        {
-          "description": "Implement full 1B pre-population from 'jobs' by project_name query.",
-          "priority": "high"
-        },
-        {
-          "description": "Add real one-click email (e.g., via stubs/alerts) for exhibits/To-Dos.",
-          "priority": "medium"
-        },
-        {
-          "description": "Expand risks (e.g., more waterproofing deps like material staging).",
-          "priority": "low"
-        }
+      "nxt": [
+        "Test full end-to-end handoff in new chat: Paste optimized summary to trigger context load.",
+        "Validate Supabase upsert for optimized JSONB in dev_logs (e.g., dashboard aggregation of todos/risks).",
+        "Iterate on any remaining Phase 1 patterns if issues arise (e.g., upload/parse in phase1a_page.tsx)."
       ],
-      "nextSteps": [
-        "Test Phase 1A end-to-end with sample contracts/specs.",
-        "Proceed to Phase 1B (job setup wizard, pre-fill from 1A data).",
-        "Refine if needed: More prompts for parse/generate, dashboard integration."
+      "ctx": [
+        "Enki Phase 1: Complement tools via upload/parse/generate; focus risk reduction/profit protection in PM lifecycle (e.g., efficient summaries for office workflows)."
       ],
-      "contextReminders": [
-        "Phase 1 desktop/web only; complements tools like PlanSwift.",
-        "Prioritize profit protection (e.g., rate consistency in scopes).",
-        "All phases reuse upload/parse/generate pattern; keep waterproofing-focused (substrate risks, vendor stocks)."
-      ]
-    },
-    {
-      "chatId": 2,
-      "date": "2025-12-25",
-      "overview": "Addressed Phase 1B (New Job Setup Wizard) issues in Enki: Focused on debugging Supabase storage upload failures (400 errors from RLS policies on 'enki-storage' bucket), created isolated test-storage page for verification, and outlined fixes for path alignment (e.g., 'jobs/user_uuid/phase1b/file.pdf'). Discussed extending RLS for phase-specific folders and finalizing storage design with metadata and soft deletes. Pending transition to Phase 1C after fixes.",
-      "keyAchievements": [
-        "Identified root cause: Misaligned paths and default RLS violating policies; fixed in test-storage with bucket_id checks and auth.uid() folder prefixes.",
-        "Implemented working upload in test-storage/page.tsx: Success with signed URLs, debug logs, and metadata {phase, type}.",
-        "Defined RLS policies: INSERT/SELECT/UPDATE/DELETE using foldername[1] IN ('jobs', 'submittals', 'pds') and foldername[2] = concat('user_', auth.uid()).",
-        "Aligned with blueprint: Storage paths 'phaseX/job_id/user_uuid/file_type/file.pdf' for reuse across phases."
-      ],
-      "decisionsMade": [
-        "Reuse test-storage logic in Phase 1B: Integrate into handleUpload for consistent paths and error handling.",
-        "Extend RLS for phases: Add 'phase1a', 'phase1b', etc., to foldername[1] allowlist.",
-        "Storage best practices: Use metadata {phase, type, jobId} for queries; soft deletes via deleted_at.",
-        "Expert mode focus: Web-first PWA, no mobile; waterproofing-specific (e.g., risks in later parses)."
-      ],
-      "openTodos": [
-        {
-          "description": "Apply test-storage fixes to Phase 1B's handleUpload; test end-to-end.",
-          "priority": "high"
-        },
-        {
-          "description": "Proceed to Phase 1C: PDS upload/parse for product DB, generate matches/risks, store in 'jobs.product_matches' JSONB and 'products' table.",
-          "priority": "high"
-        },
-        {
-          "description": "Finalize bucket design: Implement job_id in paths, metadata for filtering.",
-          "priority": "medium"
-        },
-        {
-          "description": "Add vendor email loop stubs for 1C quantities/stock confirmation.",
-          "priority": "medium"
-        }
-      ],
-      "nextSteps": [
-        "Integrate and test Phase 1B upload fixes using provided code base.",
-        "Move to Phase 1C implementation: Upload PDS → parse VOC/lead times/compatibilities → generate matches.",
-        "Update dashboard for job linking across phases."
-      ],
-      "contextReminders": [
-        "All phases follow upload/parse/generate pattern; prioritize risk reduction (e.g., lead times in procurement).",
-        "Supabase integration: Use singleton client in lib/supabase.ts; RLS for user-owned data only.",
-        "Desktop/web focus; complement GC portals with one-click outputs."
-      ]
-    },
-    {
-      "chatId": 3,
-      "date": "2025-12-26",
-      "overview": "Continued debugging Phase 1B (New Job Setup Wizard) in Enki: Reiterated Supabase storage upload issues (400 errors due to RLS on 'enki-storage'), referenced test-storage page for isolated fixes, and emphasized path alignment (e.g., 'jobs/user_uuid/phase1b/file.pdf'). Extended discussion on RLS policies for phase folders and overall storage design with metadata/soft deletes. Maintained focus on transitioning to Phase 1C post-resolution.",
-      "keyAchievements": [
-        "Reconfirmed root cause analysis: Path mismatches and RLS violations; validated fixes via test-storage with bucket_id and auth.uid() checks.",
-        "Outlined policy extensions: INSERT/SELECT/UPDATE/DELETE with foldername allowlists including 'jobs', 'submittals', 'pds', and phase-specific additions.",
-        "Reinforced storage blueprint: Paths 'phaseX/job_id/user_uuid/file_type/file.pdf', metadata {phase, type, jobId} for cross-phase queries."
-      ],
-      "decisionsMade": [
-        "Iterate on test-storage integration for Phase 1B: Adopt consistent paths, logs, and error handling across uploads.",
-        "Prioritize RLS scalability: Add phase folders (e.g., 'phase1a') to policies for secure, user-owned data.",
-        "Adopt soft deletes and metadata for reliability, aligning with blueprint's no-deletes rule.",
-        "Maintain expert mode: Waterproofing risks (e.g., vendor stocks) deferred to later parses/generates."
-      ],
-      "openTodos": [
-        {
-          "description": "Implement test-storage logic in Phase 1B handleUpload; re-test for resolution.",
-          "priority": "high"
-        },
-        {
-          "description": "Advance to Phase 1C: Handle PDS uploads, parse for VOC/lead times/compatibilities, generate risks/matches in 'jobs.product_matches' JSONB.",
-          "priority": "high"
-        },
-        {
-          "description": "Refine bucket paths with job_id; add metadata filtering.",
-          "priority": "medium"
-        },
-        {
-          "description": "Stub vendor email loops for Phase 1C stock/quantities confirmation.",
-          "priority": "medium"
-        }
-      ],
-      "nextSteps": [
-        "Apply and verify Phase 1B fixes using the base code provided.",
-        "Initiate Phase 1C development: Focus on product DB population and spec matching workflows.",
-        "Enhance dashboard for multi-phase job tracking."
-      ],
-      "contextReminders": [
-        "Phases reuse upload/parse/generate; emphasize profit/risk protection (e.g., lead time confirmations in procurement).",
-        "Supabase setup: Singleton in lib/supabase.ts; RLS ensures user-specific access.",
-        "Web/desktop priority; one-click outputs complement external tools like GC portals."
-      ]
-    },
-    {
-      "chatId": 4,
-      "date": "2025-12-27",
-      "overview": "Further iteration on Phase 1B (New Job Setup Wizard) in Enki: Re-examined Supabase storage upload errors (400 from RLS on 'enki-storage'), utilized test-storage page for debugging, and reinforced path fixes (e.g., 'jobs/user_uuid/phase1b/file.pdf'). Expanded on RLS policy adjustments for phases and storage architecture with metadata/soft deletes. Kept emphasis on resolving before Phase 1C.",
-      "keyAchievements": [
-        "Validated prior analysis: Path/RLS issues resolved in test-storage with auth.uid() prefixes and bucket checks.",
-        "Detailed policy refinements: Allowlists for foldername[1] (e.g., 'jobs', 'phase1b') in INSERT/SELECT/UPDATE/DELETE.",
-        "Solidified design: Paths with job_id/user_uuid, metadata for {phase, type, jobId} to enable queries."
-      ],
-      "decisionsMade": [
-        "Build on test-storage for Phase 1B: Standardize uploads with logs and consistent error handling.",
-        "Scale RLS: Include all phase folders in policies for secure access across lifecycle.",
-        "Enforce soft deletes and metadata standards per blueprint's persistence rules.",
-        "Defer waterproofing details (e.g., substrate risks) to parse/generate in later phases."
-      ],
-      "openTodos": [
-        {
-          "description": "Incorporate test-storage fixes into Phase 1B; conduct full testing.",
-          "priority": "high"
-        },
-        {
-          "description": "Transition to Phase 1C: PDS handling, parsing for details like VOC/compatibilities, JSONB storage in 'products'.",
-          "priority": "high"
-        },
-        {
-          "description": "Enhance paths with job_id; implement metadata-based filtering.",
-          "priority": "medium"
-        },
-        {
-          "description": "Develop stubs for Phase 1C vendor email loops on stock/quantities.",
-          "priority": "medium"
-        }
-      ],
-      "nextSteps": [
-        "Execute and confirm Phase 1B upload resolutions with base code.",
-        "Begin Phase 1C: Emphasize product DB and spec matching integrations.",
-        "Update dashboard for seamless phase-to-phase job data flow."
-      ],
-      "contextReminders": [
-        "Uniform pattern across phases: Upload/parse/generate with one-click outputs.",
-        "Supabase focus: Use lib/supabase.ts singleton; RLS for user data security.",
-        "Desktop/web-centric; risk/profit priorities (e.g., lead times in procurement)."
-      ]
-    },
-    {
-      "chatId": 5,
-      "date": "2025-12-30",
-      "overview": "Discussed gathering Product Data Sheets (PDS) for Enki's Phase 1C Manufacturer Product Database: Brainstormed scraping strategies for waterproofing vendors (Tremco, Sika, Henry, BASF, Carlisle), focusing on PDFs with VOC limits, lead times, compatibilities, costs, warranties. Developed modular Python/Selenium script for dynamic sites, with ethics (robots.txt), error handling, and metadata output for Supabase integration. Aligned with blueprint for spec matching/risk flagging (e.g., substrate incompatibilities).",
-      "keyAchievements": [
-        "Ideated reliable scraping: Vendor-specific functions, Selenium for JS sites, BeautifulSoup for link extraction, PDF downloads to structured folders.",
-        "Provided full script: Main with config, parallel-safe runs, metadata CSV (e.g., product_name, VOC, scrape_date) for 'products' table upload.",
-        "Handled edge cases: Proxies/user-agents for anti-bot, retries/delays, change detection via HTML hashes, post-scrape PDF parsing stubs (PyPDF2 for VOC/warranties).",
-        "Ensured modularity: Functions for Tremco/Sika/Henry; extensible to others, with tests/mocks."
-      ],
-      "decisionsMade": [
-        "Use Python 3.8+ with Selenium/BeautifulSoup/requests/PyPDF2; no external APIs to avoid costs/limits.",
-        "Ethical scraping: Check robots.txt, limit requests (10-20 PDFs/run), public PDS only; no overload.",
-        "Output design: Folders (/data/Vendor/Product/PDS.pdf), CSV for metadata; ZIP for Enki drag-drop.",
-        "Integration: Align with Phase 1C parse/generate (e.g., risks like 'Adhesive not for alkali concrete'); weekly cron for freshness."
-      ],
-      "openTodos": [
-        {
-          "description": "Expand script to more vendors (BASF, Carlisle); add full list from blueprint.",
-          "priority": "high"
-        },
-        {
-          "description": "Integrate outputs with Enki: Upload CSV/PDFs to Supabase 'products' table for queries in spec matching.",
-          "priority": "high"
-        },
-        {
-          "description": "Implement change detection alerts (e.g., email on site hash mismatch).",
-          "priority": "medium"
-        },
-        {
-          "description": "Add advanced features: OCR for scanned PDS (if needed), auto-extract more fields (costs/warranties).",
-          "priority": "low"
-        }
-      ],
-      "nextSteps": [
-        "Test script locally: Run for Tremco/Sika, verify downloads/metadata.",
-        "Proceed to Phase 1C app implementation: PDS upload/parse in phase1c_page.tsx, generate matches/risks/vendor emails.",
-        "Incorporate into dashboard: Query 'products' for job-specific recommendations."
-      ],
-      "contextReminders": [
-        "Waterproofing focus: Prioritize VOC/lead times/substrate risks for profit protection (e.g., avoid rework in change orders).",
-        "Phase 1 patterns: Scraping as precursor to upload/parse/generate; web/desktop only.",
-        "Architecture: Reproducible (virtualenv/Docker); tie to Supabase for DB scalability."
-      ]
-    },
-    {
-      "chatId": 6,
-      "date": "2025-12-31",
-      "overview": "Implemented Phase 1D (Kickoff/Compliance) in Enki: Developed drag-drop upload for compliance docs, parsing risks/misses (e.g., undetected issues in scopes/specs), generating items for GC emails. Created phase1d_page.tsx with UploadZone, parseFiles (focus on risks), generateFromRisks for items, UI tables/alerts, and one-click stubs. Aligned with blueprint for risk reduction and discipline enforcement.",
-      "keyAchievements": [
-        "Built full phase1d_page.tsx: Session/auth checks, uploading state, risks/generatedItems states, table displays for risks/items.",
-        "Integrated parse/generate: Stubbed risks from files, generated mitigation items (e.g., clauses/notes).",
-        "UI features: Alerts for errors, tables for risks (description) and items, back-to-dashboard button.",
-        "Waterproofing focus: Risks include misses like rate inconsistencies, lead times; one-click GC email for resolutions."
-      ],
-      "decisionsMade": [
-        "Reuse Phase 1 patterns: Upload → parse (risks) → generate (items) → one-click output (GC email).",
-        "Expert mode: Desktop/web only, prioritize profit/risk (e.g., compliance checks for sequencing deps).",
-        "Supabase integration: Use for session/auth; extend for storing risks/items in 'jobs' JSONB.",
-        "Stubs for future: Alert-based emails; no full implementation in Phase 1."
-      ],
-      "openTodos": [
-        {
-          "description": "Expand risk detection: Add more waterproofing-specific misses (e.g., material staging, vendor stocks).",
-          "priority": "medium"
-        },
-        {
-          "description": "Integrate with prior phases: Pre-pop risks from 1A/1B 'jobs' data.",
-          "priority": "high"
-        },
-        {
-          "description": "Implement real one-click GC email (beyond alert stubs).",
-          "priority": "medium"
-        },
-        {
-          "description": "Test multi-file uploads for comprehensive compliance docs.",
-          "priority": "low"
-        }
-      ],
-      "nextSteps": [
-        "Test Phase 1D with sample docs; verify parse/generate accuracy.",
-        "Proceed to Phase 1E (Submittals Log/Review: Similar upload/parse for notes/warranties).",
-        "Enhance dashboard: Link compliance items to job overviews."
-      ],
-      "contextReminders": [
-        "All phases: Upload/parse/AI assist/generate/one-click; complement tools like GC portals.",
-        "Waterproofing priorities: Substrate/sequencing risks, time-saving on paperwork.",
-        "Architecture: Next.js/React with Supabase; no mobile/voice in Phase 1."
-      ]
-    },
-    {
-      "chatId": 7,
-      "date": "2026-01-03",
-      "overview": "Optimized Enki workspace for Phase 1 dev: Built/retroactively summarized chat log in ChatSummaries.json, migrated to Supabase 'dev_logs' table with RLS/unique constraints, fixed upload script issues (env loading, UUID, constraints), resolved dashboard errors (key props, React imports, module warnings), and enhanced UI with error handling/alerts.",
-      "keyAchievements": [
-        "Assembled ordered chat summaries JSON from raw files, committed to Git.",
-        "Created 'dev_logs' table SQL with RLS/policies/triggers for dynamic storage.",
-        "Fixed upload-logs.ts: Dotenv path, debug logs, service key seeding, UUID replacement.",
-        "Updated package.json/tailwind.config.ts to ESM for warning-free dev.",
-        "Refined dashboard: Keyed fragments, React import, fetchError alerts for robust rendering."
-      ],
-      "decisionsMade": [
-        "Use service key for seeding to bypass session/RLS in scripts; anon for client fetches.",
-        "Enforce unique user_id constraint for upserts, aligning with blueprint's no-deletes.",
-        "Keep ESM for performance in scripts/UI, reusable for ai-actions.ts stubs.",
-        "Prioritize console clean-up for Phase 1 UI reliability (e.g., tables in logs/risks)."
-      ],
-      "openTodos": [
-        {
-          "description": "Run npm run lint --fix and manually resolve remaining errors (e.g., explicit any in ai-actions.ts, setState in auth-wrapper.tsx).",
-          "priority": "high"
-        },
-        {
-          "description": "Add dashboard append button for new summaries (concat jsonb arrays).",
-          "priority": "high"
-        },
-        {
-          "description": "Integrate log queries into ai-assist for context-aware Phase 1 refinements (e.g., pull todos for risks).",
-          "priority": "medium"
-        },
-        {
-          "description": "Test full end-to-end: Upload new chat, fetch/append in dashboard, verify jsonb.",
-          "priority": "high"
-        },
-        {
-          "description": "Expand to Phase 1E: Reuse upload/parse/generate for submittals log/review.",
-          "priority": "low"
-        }
-      ],
-      "nextSteps": [
-        "Fix all lint errors/warnings first: Auto-fix with --fix, manual for types/effects; retest dev server for clean console.",
-        "Test updated dashboard/UI post-lint fixes—confirm no warnings/errors.",
-        "Implement append functionality for dynamic handoffs.",
-        "Proceed to Phase 1E development (submittals: tables/alerts for notes/warranties, one-click email stubs).",
-        "Paste this summary into new chat for continuity."
-      ],
-      "contextReminders": [
-        "Phase 1 desktop/web focus; reuse patterns (upload/parse/generate) for waterproofing risks (e.g., substrates, lead times).",
-        "Supabase RLS/user-owned for security; jsonb for flexible logs/risks/to-dos in 'jobs'/'dev_logs'.",
-        "Expert mode: Prioritize profit/risk protection, time-saving (e.g., one-click in dashboard/scripts)."
-      ]
-    },
-    {
-      "chatId": 8,
-      "date": "2026-01-04",
-      "overview": "Resolved lint errors in ai-actions.ts/auth-wrapper.tsx with types/interfaces; added append button to dashboard for jsonb concatenation with validation/toasts; prepped Phase 1E expansion.",
-      "keyAchievements": [
-        "Typed ai-actions.ts with ParsedContract interface; fixed exhaustive-deps in auth-wrapper.tsx.",
-        "Implemented dashboard append with Supabase upsert and fresh fetch for race-free updates.",
-        "Clean console post-fixes; enhanced UI with Textarea for JSON input."
-      ],
-      "decisionsMade": [
-        "Use jsonb concatenation via upsert for appends; client-side validation before DB hit.",
-        "Keep append manual for now—future: Integrate semantic_conversation_search for auto-summaries."
-      ],
-      "openTodos": [
-        {
-          "description": "Integrate log queries into ai-assist for context-aware Phase 1 refinements (e.g., pull todos for risks).",
-          "priority": "medium"
-        },
-        {
-          "description": "Test full end-to-end: Upload new chat, fetch/append in dashboard, verify jsonb.",
-          "priority": "high"
-        },
-        {
-          "description": "Expand to Phase 1E: Reuse upload/parse/generate for submittals log/review.",
-          "priority": "high"
-        }
-      ],
-      "nextSteps": [
-        "Test append/UI in dev; confirm no errors.",
-        "Enhance Phase 1E with warranty context in ai-generate.ts; add dashboard link.",
-        "Paste this summary into new chat."
-      ],
-      "contextReminders": [
-        "Phase 1 desktop/web focus; reuse patterns for waterproofing risks.",
-        "Supabase RLS/jsonb for flexible logs; expert mode for profit/risk protection."
-      ]
+      "pid": "16",
+      "stat": {
+        "tested": [
+          "schema",
+          "generation",
+          "validation",
+          "expansion",
+          "ts-node verification"
+        ],
+        "pend": []
+      },
+      "cont": true,
+      "schema_version": "v2-opt"
     }
   ]
 }

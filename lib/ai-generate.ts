@@ -26,7 +26,7 @@ export const generateFromRisks = async (risks: string[], options: { type: 'exhib
         prefix = `Generated: Mitigate ${riskDetail}`;
     }
     // Add context (e.g., jurisdiction for VOC, material for substrate)
-    if (riskDetail.includes('VOC')) prefix += ` (per ${jurisdiction} regs)`;
+    if (riskDetail.includes('VOC')) prefix += ` ( (per ${jurisdiction} regs)`;
     if (riskDetail.includes('Substrate')) prefix += ` for ${materialType} compatibility`;
     if (riskDetail.includes('Lead Time')) prefix += ` (average ${leadTime} weeks)`;
 
@@ -38,7 +38,7 @@ export const generateFromRisks = async (risks: string[], options: { type: 'exhib
 export const generateExhibits = (risks: string[]) => generateFromRisks(risks, { type: 'exhibits' });
 export const generateSubmittals = (risks: string[]) => generateFromRisks(risks, { type: 'clauses' });
 
-import { OptimizedChatSummary } from '@/lib/schemas/optimized-chat-summary';  // Adjust path if needed
+import type { OptimizedChatSummary } from './optimized-chat-summary.ts';  // Type-only import for interface (fixes runtime export error)
 
 interface RawSummaryData {
   chatId: string;
@@ -68,6 +68,7 @@ export const minifySummary = (data: RawSummaryData): OptimizedChatSummary => {
     },
     achvs: data.keyAchievements?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
     decs: data.decisionsMade?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
+    todos: data.openTodos?.slice(0, 5).map((todo) => ({ desc: todo.description.substring(0, 100), pri: todo.priority })) || [],
     nxt: data.nextSteps?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
     ctx: data.contextReminders?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
     pid: data.parentChatId,
@@ -81,24 +82,41 @@ export const minifySummary = (data: RawSummaryData): OptimizedChatSummary => {
   // Omit empties manually if needed (TypeScript optionals handle)
 };
 
-export const formatForHuman = (json: OptimizedChatSummary): string => {
+export const formatForHuman = (json: OptimizedChatSummary | RawSummaryData): string => {  // Use union type for compatibility
+  const id = json.id || ('chatId' in json ? json.chatId : 'Unknown');
+  const dt = json.dt || ('date' in json ? json.date : 'Unknown');
+  const overview = 'ov' in json && json.ov ? `Changes: ${json.ov.changes?.join(', ') || ''}. Branch: ${json.ov.branch || 'None'}. Files: ${json.ov.files?.join(', ') || 'None'}. Next Action: ${json.ov.next_action || ''}.` : ('overview' in json ? json.overview : 'None');
+  const achvs = 'achvs' in json ? json.achvs : ('keyAchievements' in json ? json.keyAchievements : []);
+  const decs = 'decs' in json ? json.decs : ('decisionsMade' in json ? json.decisionsMade : []);
+  const todosStr = 'todos' in json && json.todos ? json.todos.map((todo: {desc: string, pri: string}) => `- ${todo.desc} (Priority: ${todo.pri})`).join('\n') 
+    : 'openTodos' in json && json.openTodos ? json.openTodos.map((todo: {description: string, priority: string}) => `- ${todo.description} (Priority: ${todo.priority})`).join('\n') 
+    : 'None';
+  const nxt = 'nxt' in json ? json.nxt : ('nextSteps' in json ? json.nextSteps : []);
+  const ctx = 'ctx' in json ? json.ctx : ('contextReminders' in json ? json.contextReminders : []);
+  const pid = 'pid' in json ? json.pid : ('parentChatId' in json ? json.parentChatId : 'None');
+  const stat = 'stat' in json && json.stat ? `Tested: ${json.stat.tested?.join(', ') || 'None'}; Pending: ${json.stat.pend?.join(', ') || 'None'}`
+    : 'incompleteStatus' in json && json.incompleteStatus ? `Tested: ${json.incompleteStatus.automationsTested?.join(', ') || 'None'}; Pending: ${json.incompleteStatus.automationsPending?.join(', ') || 'None'}`
+    : 'None';
+  const cont = 'cont' in json ? (json.cont ? 'True' : 'False') : ('continuationFlag' in json ? (json.continuationFlag ? 'True' : 'False') : 'False');
+  const schema_version = 'schema_version' in json ? json.schema_version : 'N/A';
+
   return `
-**Chat ID:** ${json.id}
-**Date:** ${json.dt}
-**Overview:** Changes: ${json.ov.changes.join(', ')}. Branch: ${json.ov.branch || 'None'}. Files: ${json.ov.files?.join(', ') || 'None'}. Next Action: ${json.ov.next_action}.
-**Key Achievements:**
-${json.achvs.map(item => `- ${item}`).join('\n')}
-**Decisions Made:**
-${json.decs.map(item => `- ${item}`).join('\n')}
-**Open To-Dos:**
-${json.todos ? json.todos.map(todo => `- ${todo.desc} (Priority: ${todo.pri})`).join('\n') : 'None'}
-**Next Steps:**
-${json.nxt.map(item => `- ${item}`).join('\n')}
-**Context Reminders:**
-${json.ctx.map(item => `- ${item}`).join('\n')}
-**Parent Chat ID:** ${json.pid || 'None'}
-**Incomplete Status:** Tested: ${json.stat.tested.join(', ') || 'None'}; Pending: ${json.stat.pend.join(', ') || 'None'}
-**Continuation Flag:** ${json.cont ? 'True' : 'False'}
-**Schema Version:** ${json.schema_version || 'N/A'}
+Chat ID: ${id}
+Date: ${dt}
+Overview: ${overview}
+Key Achievements:
+${achvs.map((item: string) => `- ${item}`).join('\n')}
+Decisions Made:
+${decs.map((item: string) => `- ${item}`).join('\n')}
+Open To-Dos:
+${todosStr}
+Next Steps:
+${nxt.map((item: string) => `- ${item}`).join('\n')}
+Context Reminders:
+${ctx.map((item: string) => `- ${item}`).join('\n')}
+Parent Chat ID: ${pid}
+Incomplete Status: ${stat}
+Continuation Flag: ${cont}
+Schema Version: ${schema_version}
 `;
 };

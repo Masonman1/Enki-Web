@@ -13,6 +13,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "allowImportingTsExtensions": true,  // Enables .ts extensions in imports
+    "baseUrl": ".",  // Added: Sets root for @/* aliases (resolves to ./*)
     "plugins": [
       {
         "name": "next"

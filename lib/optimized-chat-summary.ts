@@ -13,7 +13,7 @@ export interface OptimizedChatSummary {
   nxt: string[];
   ctx: string[];
   pid: string | null;
-  priors?: OptimizedChatSummary[];  // Recursive for prior summaries (type-safe over any)
+  priors?: OptimizedChatSummary[];  // Recursive for prior summaries (type-safe)
   stat: {
     tested: string[];
     pend: string[];
