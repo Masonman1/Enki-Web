@@ -11,7 +11,6 @@ const { dir } = program.opts();  // 'output' is const now
 const output = program.opts().output;  // Separate for clarity, but const
 
 // Make dir absolute to avoid Windows path issues
-const resolvedDir = path.resolve(dir);
 
 async function flattenDir(baseDir: string, currentDir: string, outputDir: string, flattenedCount: number = 0) {
   try {

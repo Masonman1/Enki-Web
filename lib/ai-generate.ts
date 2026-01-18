@@ -25,72 +25,26 @@ export const generateFromRisks = async (risks: string[], options: { type: 'exhib
       default:
         prefix = `Generated: Mitigate ${riskDetail}`;
     }
-    // Add context (e.g., jurisdiction for VOC, material for substrate)
-    if (riskDetail.includes('VOC')) prefix += ` ( (per ${jurisdiction} regs)`;
-    if (riskDetail.includes('Substrate')) prefix += ` for ${materialType} compatibility`;
-    if (riskDetail.includes('Lead Time')) prefix += ` (average ${leadTime} weeks)`;
-
-    return prefix + ' to mitigate liability.';
+    // Append waterproofing context (e.g., lead time, VOC compliance, material type)
+    return `${prefix}. Context: ${materialType} in ${jurisdiction}; Lead time: ${leadTime} weeks.`;
   });
 };
 
-// Deprecated aliases for backward compat (remove in future)
-export const generateExhibits = (risks: string[]) => generateFromRisks(risks, { type: 'exhibits' });
-export const generateSubmittals = (risks: string[]) => generateFromRisks(risks, { type: 'clauses' });
+// Client-side formatter for human-readable summaries (no AI/automation; pure templating)
+// Used in dashboard for display/storage of readable text from JSON rows
+export const formatForHuman = (json: any): string => {
+  if (!json || typeof json !== 'object') return 'Invalid JSON';
 
-import type { OptimizedChatSummary } from './optimized-chat-summary.ts';  // Type-only import for interface (fixes runtime export error)
-
-interface RawSummaryData {
-  chatId: string;
-  date: string;
-  overview: string;
-  keyAchievements?: string[];
-  decisionsMade?: string[];
-  openTodos?: { description: string; priority: string }[];
-  nextSteps?: string[];
-  contextReminders?: string[];
-  parentChatId: string | null;
-  priorSummaries?: RawSummaryData[];  // Recursive for prior summaries (type-safe over any)
-  incompleteStatus?: { automationsTested: string[]; automationsPending: string[] };
-  continuationFlag: boolean;
-  files_affected?: string[];  // Optional for ov.files
-}
-
-export const minifySummary = (data: RawSummaryData): OptimizedChatSummary => {
-  return {
-    id: data.chatId,
-    dt: data.date,
-    ov: {
-      changes: [data.overview.substring(0, 100) + (data.overview.length > 100 ? '...' : '')],
-      branch: 'refactor-phase1-flatten',  // Derive or hardcoded
-      files: data.files_affected || [],
-      next_action: data.nextSteps?.[0]?.substring(0, 100) + (data.nextSteps?.[0]?.length > 100 ? '...' : '') || ''
-    },
-    achvs: data.keyAchievements?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
-    decs: data.decisionsMade?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
-    todos: data.openTodos?.slice(0, 5).map((todo) => ({ desc: todo.description.substring(0, 100), pri: todo.priority })) || [],
-    nxt: data.nextSteps?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
-    ctx: data.contextReminders?.slice(0, 5).map((item: string) => item.substring(0, 100)) || [],
-    pid: data.parentChatId,
-    stat: {
-      tested: data.incompleteStatus?.automationsTested || [],
-      pend: data.incompleteStatus?.automationsPending || []
-    },
-    cont: data.continuationFlag,
-    schema_version: 'v2-opt'
-  };
-  // Omit empties manually if needed (TypeScript optionals handle)
-};
-
-export const formatForHuman = (json: OptimizedChatSummary | RawSummaryData): string => {  // Use union type for compatibility
-  const id = json.id || ('chatId' in json ? json.chatId : 'Unknown');
-  const dt = json.dt || ('date' in json ? json.date : 'Unknown');
-  const overview = 'ov' in json && json.ov ? `Changes: ${json.ov.changes?.join(', ') || ''}. Branch: ${json.ov.branch || 'None'}. Files: ${json.ov.files?.join(', ') || 'None'}. Next Action: ${json.ov.next_action || ''}.` : ('overview' in json ? json.overview : 'None');
-  const achvs = 'achvs' in json ? json.achvs : ('keyAchievements' in json ? json.keyAchievements : []);
-  const decs = 'decs' in json ? json.decs : ('decisionsMade' in json ? json.decisionsMade : []);
-  const todosStr = 'todos' in json && json.todos ? json.todos.map((todo: {desc: string, pri: string}) => `- ${todo.desc} (Priority: ${todo.pri})`).join('\n') 
-    : 'openTodos' in json && json.openTodos ? json.openTodos.map((todo: {description: string, priority: string}) => `- ${todo.description} (Priority: ${todo.priority})`).join('\n') 
-    : 'None';
+  // Handle schema variations (v2-simplified or older)
+  const id = 'id' in json ? json.id : 'N/A';
+  const dt = 'dt' in json ? json.dt : 'N/A';
+  const overview = 'ov' in json && json.ov ? 
+    `Changes: ${json.ov.changes?.join(', ') || 'None'}; Branch: ${json.ov.branch || 'N/A'}; Files: ${json.ov.files?.join(', ') || 'None'}; Next: ${json.ov.next_action || 'None'}`
+    : 'overview' in json ? json.overview : 'N/A';
+  const achvs = 'achvs' in json ? json.achvs : [];
+  const decs = 'decs' in json ? json.decs : [];
+  const todos = 'todos' in json ? json.todos : ('openTodos' in json ? json.openTodos : []);
+  const todosStr = todos.map((t: any) => `- ${t.desc || t.description} (Priority: ${t.pri || t.priority || 'N/A'})`).join('\n');
   const nxt = 'nxt' in json ? json.nxt : ('nextSteps' in json ? json.nextSteps : []);
   const ctx = 'ctx' in json ? json.ctx : ('contextReminders' in json ? json.contextReminders : []);
   const pid = 'pid' in json ? json.pid : ('parentChatId' in json ? json.parentChatId : 'None');

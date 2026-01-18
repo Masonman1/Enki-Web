@@ -11,13 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Clipboard, Trash2 } from 'lucide-react';
 import toast from "react-hot-toast";
 import React from 'react';
-import { OptimizedChatSummary } from "@/lib/optimized-chat-summary"; // NEW: Import new interface
-import { formatForHuman } from "@/lib/ai-generate"; // NEW: Import formatter
+import { formatForHuman } from "@/lib/ai-generate"; // Keep for human-readable display in summaries (manual)
 
 export default function Dashboard() {
   const router = useRouter();
   const supabase = useSupabase();
-  const [summaries, setSummaries] = useState<OptimizedChatSummary[]>([]); // UPDATED: Use new type
+  const [summaries, setSummaries] = useState<any[]>([]); // Use any[] for manual summaries (no auto-optimized type)
   const [expandedChats, setExpandedChats] = useState<string[]>([]);
   const [todoFilter, setTodoFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -87,7 +86,7 @@ export default function Dashboard() {
 
   const handleAppend = async () => {
     try {
-      const parsedJson = JSON.parse(newSummaryJson) as OptimizedChatSummary; // UPDATED: Type to new
+      const parsedJson = JSON.parse(newSummaryJson) as any; // Manual JSON input; no auto-optimized type
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       if (!userId) throw new Error('No user');
@@ -125,7 +124,7 @@ export default function Dashboard() {
 
   const filteredTodos = () => {
     const allTodos = summaries.flatMap(summary => 
-      (summary.todos || []).map(todo => ({ description: todo.desc, priority: todo.pri })) // UPDATED: Map to old shape
+      (summary.todos || []).map(todo => ({ description: todo.desc, priority: todo.pri })) // Map to old shape for compatibility
     );
     return allTodos.filter(todo => todoFilter === 'all' || todo.priority.toLowerCase() === todoFilter);
   };
@@ -226,7 +225,7 @@ export default function Dashboard() {
                       </CardHeader>
                       {expanded && (
                         <CardContent>
-                          <pre className="whitespace-pre-wrap text-sm">{formatForHuman(summary)}</pre> {/* UPDATED: Use formatter */}
+                          <pre className="whitespace-pre-wrap text-sm">{formatForHuman(summary)}</pre> {/* Human-readable display */}
                         </CardContent>
                       )}
                     </Card>

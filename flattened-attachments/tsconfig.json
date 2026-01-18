@@ -13,8 +13,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "allowImportingTsExtensions": true,  // Enables .ts extensions in imports
-    "baseUrl": ".",  // Added: Sets root for @/* aliases (resolves to ./*)
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
@@ -29,8 +29,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
