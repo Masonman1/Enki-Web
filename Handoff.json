@@ -1,0 +1,67 @@
+{
+  "workflow_version": "v2-simplified",
+  "handoffOutputs": [
+    {
+  "step": 1,
+  "description": "Fetch last ID from last-chat-id.json (via code_execution), increment, and display updated file content as JSON (for manual local update)",
+  "format": "code_box",
+  "fallback": "{ \"last_id\": 1 } (if file missing or empty)"
+}
+    {
+      "step": 2,
+      "description": "Display bulleted list of affected file base names (derived from chat; no extensions/paths)",
+      "format": "bullets",
+      "fallback": "None (if no files modified)"
+    },
+    {
+      "step": 3,
+      "description": "Display command to run scripts_flatten-files.ts (with defaults)",
+      "format": "code_box",
+      "content": "npx ts-node scripts/flatten-files.ts --dir . --output flattened-attachments"
+    },
+    {
+      "step": 4,
+      "description": "Display Git commands (hard-coded branch: refactor-phase1-flatten; separate code boxes)",
+      "format": "separate_code_boxes",
+      "commands": [
+        "git status",
+        "git add .",
+        "git commit -m \"Handoff from chat [ID]: [brief overview from summary]\"",
+        "git push origin refactor-phase1-flatten"
+      ]
+    },
+    {
+      "step": 5,
+      "description": "Display manual lint command",
+      "format": "code_box",
+      "content": "npm run lint"
+    },
+    {
+      "step": 6,
+      "description": "Display chat summary as JSON (for manual Supabase upsert; derived from chat history)",
+      "format": "code_box",
+      "schema": {
+        "id": "string (auto-increment or timestamp)",
+        "dt": "string (YYYY-MM-DD)",
+        "ov": {
+          "changes": "array of strings",
+          "branch": "string (refactor-phase1-flatten)",
+          "files": "array of strings (base names)",
+          "next_action": "string"
+        },
+        "achvs": "array of strings",
+        "decs": "array of strings",
+        "todos": "array of {desc: string, pri: string}",
+        "nxt": "array of strings",
+        "ctx": "array of strings",
+        "pid": "string or null",
+        "stat": {
+          "tested": "array of strings",
+          "pend": "array of strings"
+        },
+        "cont": "boolean",
+        "schema_version": "string (v2-simplified)"
+      }
+    }
+  ]
+}
