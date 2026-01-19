@@ -1,0 +1,291 @@
+{
+  "buckets": {
+    "enki-storage": {
+      "structure": "billings, closeouts, cos, invoices, jobs, pds, procurements, rfis, schedules, submittals",
+      "permissions": "Private",
+      "rls_policies": [
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "User delete own phase/user path",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "DELETE",
+          "qual": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))",
+          "with_check": null
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "User read own phase/user path",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "SELECT",
+          "qual": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))",
+          "with_check": null
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "User update own phase/user path",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "UPDATE",
+          "qual": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))",
+          "with_check": null
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "User upload to own phase/user path",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "INSERT",
+          "qual": null,
+          "with_check": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text, 'phase1a'::text, 'phase1b'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))"
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "Allow select for owners",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "SELECT",
+          "qual": "((bucket_id = 'enki-storage'::text) AND (owner = auth.uid()) AND ((metadata ->> 'deleted_at'::text) IS NULL))",
+          "with_check": null
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "Allow update for owners",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "UPDATE",
+          "qual": "((bucket_id = 'enki-storage'::text) AND (owner = auth.uid()))",
+          "with_check": null
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "Allow delete for owners",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "DELETE",
+          "qual": "((bucket_id = 'enki-storage'::text) AND (owner = auth.uid()))",
+          "with_check": null
+        },
+        {
+          "schemaname": "storage",
+          "tablename": "objects",
+          "policyname": "Allow insert for authenticated users in allowed folders",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "INSERT",
+          "qual": null,
+          "with_check": "((bucket_id = 'enki-storage'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text, 'rfis'::text, 'schedules'::text, 'cos'::text, 'procurements'::text, 'invoices'::text, 'billings'::text, 'closeouts'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))"
+        }
+      ]
+    }
+  },
+  "tables": {
+    "jobs": {
+      "columns": [
+        "id: uuid",
+        "owner_id: uuid",
+        "project_name: text",
+        "gc_contact: jsonb",
+        "scope_summary: text",
+        "essentials: jsonb",
+        "to_do_items: jsonb",
+        "product_matches: jsonb",
+        "rfis: jsonb",
+        "submittals: jsonb",
+        "schedules: jsonb",
+        "cos: jsonb",
+        "procurements: jsonb",
+        "invoices: jsonb",
+        "billings: jsonb",
+        "closeouts: jsonb",
+        "created_at: timestamp with time zone",
+        "updated_at: timestamp with time zone",
+        "contract_number: text",
+        "contract_amount: numeric",
+        "scope_of_work: text"
+      ],
+      "rls_policies": [
+        {
+          "schemaname": "public",
+          "tablename": "jobs",
+          "policyname": "Enable read access for owners",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "SELECT",
+          "qual": "(owner_id = auth.uid())",
+          "with_check": null
+        },
+        {
+          "schemaname": "public",
+          "tablename": "jobs",
+          "policyname": "Enable insert for authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "INSERT",
+          "qual": null,
+          "with_check": "(auth.role() = 'authenticated'::text)"
+        },
+        {
+          "schemaname": "public",
+          "tablename": "jobs",
+          "policyname": "Enable update for owners",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "UPDATE",
+          "qual": "(owner_id = auth.uid())",
+          "with_check": null
+        }
+      ]
+    },
+    "products": {
+      "columns": [
+        "id: uuid",
+        "manufacturer: text",
+        "name: text",
+        "voc_level: numeric",
+        "compatibility: jsonb"
+      ],
+      "rls_policies": [
+        {
+          "schemaname": "public",
+          "tablename": "products",
+          "policyname": "Enable insert for authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "INSERT",
+          "qual": null,
+          "with_check": "(auth.role() = 'authenticated'::text)"
+        },
+        {
+          "schemaname": "public",
+          "tablename": "products",
+          "policyname": "Enable read access for all authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "SELECT",
+          "qual": "(auth.role() = 'authenticated'::text)",
+          "with_check": null
+        },
+        {
+          "schemaname": "public",
+          "tablename": "products",
+          "policyname": "Enable update for authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "cmd": "UPDATE",
+          "qual": "(auth.role() = 'authenticated'::text)",
+          "with_check": null
+        }
+      ]
+    },
+    "dev_logs": {
+      "columns": [
+        "id: uuid",
+        "user_id: uuid",
+        "summaries: jsonb",
+        "created_at: timestamp with time zone",
+        "updated_at: timestamp with time zone"
+      ],
+      "rls_policies": [
+        {
+          "schemaname": "public",
+          "tablename": "dev_logs",
+          "policyname": "Allow insert for own logs",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "INSERT",
+          "qual": null,
+          "with_check": "(user_id = auth.uid())"
+        },
+        {
+          "schemaname": "public",
+          "tablename": "dev_logs",
+          "policyname": "Allow select for own logs",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "SELECT",
+          "qual": "(user_id = auth.uid())",
+          "with_check": null
+        },
+        {
+          "schemaname": "public",
+          "tablename": "dev_logs",
+          "policyname": "Allow update for own logs",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "UPDATE",
+          "qual": "(user_id = auth.uid())",
+          "with_check": "(user_id = auth.uid())"
+        },
+        {
+          "schemaname": "public",
+          "tablename": "dev_logs",
+          "policyname": "Allow delete for own logs",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "cmd": "DELETE",
+          "qual": "(user_id = auth.uid())",
+          "with_check": null
+        },
+        {
+          "schemaname": "public",
+          "tablename": "dev_logs",
+          "policyname": "Admin full access",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "service_role"
+          ],
+          "cmd": "ALL",
+          "qual": "true",
+          "with_check": "true"
+        }
+      ]
+    }
+  },
+  "last_updated": "2026-01-19T22:50:26.368Z",
+  "changes": []
+}

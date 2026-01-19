@@ -44,12 +44,11 @@ export default function Phase1A() {
   const [risks, setRisks] = useState<string[]>([]);
   const [toDoItems, setToDoItems] = useState<string[]>([]);
   const [exhibits, setExhibits] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
+  const [session, setSession] = useState<any>(null);
   const router = useRouter();
   const supabase = useSupabase();
-  const [session, setSession] = useState<any | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -58,44 +57,27 @@ export default function Phase1A() {
       if (!session) router.push('/');
     };
     getSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (!newSession) router.push('/');
-    });
-
-    return () => authListener.subscription.unsubscribe();
   }, [supabase, router]);
 
-  const resetEssentials = () => {
-    setContractNumber(null);
-    setContractAmount(null);
-    setConstructorName(null);
-    setConstructorAddress(null);
-    setProjectName(null);
-    setProjectAddress(null);
-    setOwnerName(null);
-    setOwnerAddress(null);
-    setArchitectName(null);
-    setArchitectAddress(null);
-    setScopeOfWork(null);
+  const handleUpload = async (acceptedFiles: File[]) => {
+    if (!session?.user?.id) {
+      setError('Authentication required');
+      toast.error('Please sign in');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
     setRisks([]);
     setToDoItems([]);
     setExhibits([]);
-  };
-
-  const handleUpload = async (acceptedFiles: File[]) => {
-    resetEssentials();
-    setUploading(true);
-    setError(null);
 
     try {
       const fileUrls: string[] = [];
 
       for (const file of acceptedFiles) {
         const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, ''); // Clean for safety
-        const userId = session?.user?.id || 'anon'; // Fallback if null
-        const filePath = `user_${userId}/phase/${uuidv4()}/${safeName}`; // Adjusted prefix to match potential policy order
+        const filePath = `jobs/user_${session.user.id}/phase1a/${safeName}`; // Updated path to match Supabase structure
         const { error: uploadError } = await supabase.storage
           .from('enki-storage')
           .upload(filePath, file, { upsert: true }); // Upsert to avoid duplicate 400s
@@ -117,30 +99,37 @@ export default function Phase1A() {
         fileUrls.push(signedData.signedUrl);
       }
 
-      const parsed = await parseFiles(fileUrls);
-      if (parsed.length > 0) {
-        const { contract_number, contract_amount, constructor_name, constructor_address, project_name, project_address, owner_name, owner_address, architect_name, architect_address, scope_of_work, risks: parsedRisks } = parsed[0];
-        setContractNumber(contract_number);
-        setContractAmount(contract_amount);
-        setConstructorName(constructor_name);
-        setConstructorAddress(constructor_address);
-        setProjectName(project_name);
-        setProjectAddress(project_address);
-        setOwnerName(owner_name);
-        setOwnerAddress(owner_address);
-        setArchitectName(architect_name);
-        setArchitectAddress(architect_address);
-        setScopeOfWork(scope_of_work);
-        setRisks(parsedRisks || []);
-        const toDoItems = await generateFromRisks(parsedRisks || [], { type: 'notes' });
-        const exhibits = await generateFromRisks(parsedRisks || [], { type: 'exhibits' });
-        setToDoItems(toDoItems);
-        setExhibits(exhibits);
+      const parsedResults = await parseFiles(fileUrls, { focus: 'contract' });
+      console.log('Debug: parsedResults from parseFiles:', parsedResults); // For verification
+
+      const allRisks = parsedResults.flatMap(r => r.risks || []);
+      setRisks(allRisks);
+
+      if (parsedResults.length > 0) {
+        const essentials = parsedResults[0];
+        setContractNumber(essentials.contract_number);
+        setContractAmount(essentials.contract_amount);
+        setConstructorName(essentials.constructor_name);
+        setConstructorAddress(essentials.constructor_address);
+        setProjectName(essentials.project_name);
+        setProjectAddress(essentials.project_address);
+        setOwnerName(essentials.owner_name);
+        setOwnerAddress(essentials.owner_address);
+        setArchitectName(essentials.architect_name);
+        setArchitectAddress(essentials.architect_address);
+        setScopeOfWork(essentials.scope_of_work);
       }
-      toast.success('Processing complete');
-    } catch (err) {
-      const message = err.message || 'Upload/parse error';
-      console.error('Full upload/parse error:', err);
+
+      const generatedToDos = await generateFromRisks(allRisks, { type: 'todos' });
+      const generatedExhibits = await generateFromRisks(allRisks, { type: 'exhibits' });
+
+      setToDoItems(generatedToDos);
+      setExhibits(generatedExhibits);
+      toast.success('Processing complete!');
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      console.error('Full upload/parse error:', err); // Catch-all debug
       setError(message);
       toast.error(message);
     } finally {
@@ -152,17 +141,18 @@ export default function Phase1A() {
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Phase 1A: Contract Essentials Extraction</CardTitle>
-          <CardDescription>Upload subcontract PDFs to extract essentials, detect risks, and generate to-dos/exhibits.</CardDescription>
+          <CardTitle>Phase 1A: Pre-Bid Protection/Job Setup</CardTitle>
+          <CardDescription>Upload subcontracts/specs for essentials extraction & risk detection</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <UploadZone onUpload={handleUpload} />
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mt-4">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          {(contractNumber || contractAmount || constructorName || constructorAddress || projectName || projectAddress || ownerName || ownerAddress || architectName || architect_address || scopeOfWork) && (
+          {uploading && <p className="mt-4">Uploading and processing...</p>}
+          {(contractNumber || contractAmount || constructorName || constructorAddress || projectName || projectAddress || ownerName || ownerAddress || architectName || architectAddress || scopeOfWork) && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Extracted Contract Essentials</h3>
               <Table>
@@ -173,17 +163,17 @@ export default function Phase1A() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow><TableCell>Contract Number</TableCell><TableCell>{contractNumber || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Contract Amount</TableCell><TableCell>{contractAmount || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Constructor Name</TableCell><TableCell>{constructorName || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Constructor Address</TableCell><TableCell>{constructorAddress || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Project Name</TableCell><TableCell>{projectName || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Project Address</TableCell><TableCell>{projectAddress || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Owner Name</TableCell><TableCell>{ownerName || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Owner Address</TableCell><TableCell>{ownerAddress || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Architect Name</TableCell><TableCell>{architectName || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Architect Address</TableCell><TableCell>{architectAddress || 'N/A'}</TableCell></TableRow>
-                  <TableRow><TableCell>Scope of Work</TableCell><TableCell>{scopeOfWork || 'N/A'}</TableCell></TableRow>
+                  {contractNumber && <TableRow><TableCell>Contract Number</TableCell><TableCell>{contractNumber}</TableCell></TableRow>}
+                  {contractAmount && <TableRow><TableCell>Contract Amount</TableCell><TableCell>{contractAmount}</TableCell></TableRow>}
+                  {constructorName && <TableRow><TableCell>Constructor Name</TableCell><TableCell>{constructorName}</TableCell></TableRow>}
+                  {constructorAddress && <TableRow><TableCell>Constructor Address</TableCell><TableCell>{constructorAddress}</TableCell></TableRow>}
+                  {projectName && <TableRow><TableCell>Project Name</TableCell><TableCell>{projectName}</TableCell></TableRow>}
+                  {projectAddress && <TableRow><TableCell>Project Address</TableCell><TableCell>{projectAddress}</TableCell></TableRow>}
+                  {ownerName && <TableRow><TableCell>Owner Name</TableCell><TableCell>{ownerName}</TableCell></TableRow>}
+                  {ownerAddress && <TableRow><TableCell>Owner Address</TableCell><TableCell>{ownerAddress}</TableCell></TableRow>}
+                  {architectName && <TableRow><TableCell>Architect Name</TableCell><TableCell>{architectName}</TableCell></TableRow>}
+                  {architectAddress && <TableRow><TableCell>Architect Address</TableCell><TableCell>{architectAddress}</TableCell></TableRow>}
+                  {scopeOfWork && <TableRow><TableCell>Scope of Work</TableCell><TableCell>{scopeOfWork}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
@@ -194,7 +184,7 @@ export default function Phase1A() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Risk Description</TableHead>
+                    <TableHead>Risk</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
