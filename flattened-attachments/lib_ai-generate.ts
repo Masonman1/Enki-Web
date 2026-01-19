@@ -1,3 +1,4 @@
+// lib/ai-generate.ts
 export const generateFromRisks = async (risks: string[], options: { type: 'exhibits' | 'clauses' | 'notes' | 'packages'; context?: { jurisdiction?: string; materialType?: string; leadTime?: number } } = { type: 'exhibits' }) => {
   // Stub for AI generation: Mock outputs from parsed risks (configurable Claude/Grok later)
   // Outputs for one-click emails/POs; add context for waterproofing-specific (e.g., VOC per jurisdiction)
@@ -32,27 +33,27 @@ export const generateFromRisks = async (risks: string[], options: { type: 'exhib
 
 // Client-side formatter for human-readable summaries (no AI/automation; pure templating)
 // Used in dashboard for display/storage of readable text from JSON rows
-export const formatForHuman = (json: any): string => {
+export const formatForHuman = (json: Record<string, unknown>): string => { // Use Record instead of any
   if (!json || typeof json !== 'object') return 'Invalid JSON';
 
   // Handle schema variations (v2-simplified or older)
-  const id = 'id' in json ? json.id : 'N/A';
-  const dt = 'dt' in json ? json.dt : 'N/A';
+  const id = 'id' in json ? json.id as string : 'N/A';
+  const dt = 'dt' in json ? json.dt as string : 'N/A';
   const overview = 'ov' in json && json.ov ? 
-    `Changes: ${json.ov.changes?.join(', ') || 'None'}; Branch: ${json.ov.branch || 'N/A'}; Files: ${json.ov.files?.join(', ') || 'None'}; Next: ${json.ov.next_action || 'None'}`
-    : 'overview' in json ? json.overview : 'N/A';
-  const achvs = 'achvs' in json ? json.achvs : [];
-  const decs = 'decs' in json ? json.decs : [];
-  const todos = 'todos' in json ? json.todos : ('openTodos' in json ? json.openTodos : []);
-  const todosStr = todos.map((t: any) => `- ${t.desc || t.description} (Priority: ${t.pri || t.priority || 'N/A'})`).join('\n');
-  const nxt = 'nxt' in json ? json.nxt : ('nextSteps' in json ? json.nextSteps : []);
-  const ctx = 'ctx' in json ? json.ctx : ('contextReminders' in json ? json.contextReminders : []);
-  const pid = 'pid' in json ? json.pid : ('parentChatId' in json ? json.parentChatId : 'None');
-  const stat = 'stat' in json && json.stat ? `Tested: ${json.stat.tested?.join(', ') || 'None'}; Pending: ${json.stat.pend?.join(', ') || 'None'}`
-    : 'incompleteStatus' in json && json.incompleteStatus ? `Tested: ${json.incompleteStatus.automationsTested?.join(', ') || 'None'}; Pending: ${json.incompleteStatus.automationsPending?.join(', ') || 'None'}`
+    `Changes: ${(json.ov as Record<string, unknown>).changes?.join(', ') || 'None'}; Branch: ${(json.ov as Record<string, unknown>).branch || 'N/A'}; Files: ${(json.ov as Record<string, unknown>).files?.join(', ') || 'None'}; Next: ${(json.ov as Record<string, unknown>).next_action || 'None'}`
+    : 'overview' in json ? json.overview as string : 'N/A';
+  const achvs = 'achvs' in json ? json.achvs as string[] : [];
+  const decs = 'decs' in json ? json.decs as string[] : [];
+  const todos = 'todos' in json ? json.todos as Array<Record<string, unknown>> : ('openTodos' in json ? json.openTodos as Array<Record<string, unknown>> : []); // Use Record for todo items
+  const todosStr = todos.map((t) => `- ${t.desc || t.description || 'N/A'} (Priority: ${t.pri || t.priority || 'N/A'})`).join('\n');
+  const nxt = 'nxt' in json ? json.nxt as string[] : ('nextSteps' in json ? json.nextSteps as string[] : []);
+  const ctx = 'ctx' in json ? json.ctx as string[] : ('contextReminders' in json ? json.contextReminders as string[] : []);
+  const pid = 'pid' in json ? json.pid as string : ('parentChatId' in json ? json.parentChatId as string : 'None');
+  const stat = 'stat' in json && json.stat ? `Tested: ${(json.stat as Record<string, unknown>).tested?.join(', ') || 'None'}; Pending: ${(json.stat as Record<string, unknown>).pend?.join(', ') || 'None'}`
+    : 'incompleteStatus' in json && json.incompleteStatus ? `Tested: ${(json.incompleteStatus as Record<string, unknown>).automationsTested?.join(', ') || 'None'}; Pending: ${(json.incompleteStatus as Record<string, unknown>).automationsPending?.join(', ') || 'None'}`
     : 'None';
-  const cont = 'cont' in json ? (json.cont ? 'True' : 'False') : ('continuationFlag' in json ? (json.continuationFlag ? 'True' : 'False') : 'False');
-  const schema_version = 'schema_version' in json ? json.schema_version : 'N/A';
+  const cont = 'cont' in json ? (json.cont as boolean ? 'True' : 'False') : ('continuationFlag' in json ? (json.continuationFlag as boolean ? 'True' : 'False') : 'False');
+  const schema_version = 'schema_version' in json ? json.schema_version as string : 'N/A';
 
   return `
 Chat ID: ${id}

@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,13 +11,35 @@ import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Clipboard, Trash2 } from 'lucide-react';
 import toast from "react-hot-toast";
-import React from 'react';
 import { formatForHuman } from "@/lib/ai-generate"; // Keep for human-readable display in summaries (manual)
+
+interface TodoItem {
+  desc: string;
+  pri: 'high' | 'medium' | 'low';
+}
+
+interface ChatSummary {
+  id: string;
+  dt: string;
+  ov?: Record<string, unknown>;
+  overview?: string;
+  achvs?: string[];
+  decs?: string[];
+  todos?: TodoItem[];
+  nxt?: string[];
+  ctx?: string[];
+  pid?: string | null;
+  stat?: Record<string, unknown>;
+  cont?: boolean;
+  schema_version?: string;
+  [key: string]: unknown;
+}
 
 export default function Dashboard() {
   const router = useRouter();
   const supabase = useSupabase();
-  const [summaries, setSummaries] = useState<any[]>([]); // Use any[] for manual summaries (no auto-optimized type)
+
+  const [summaries, setSummaries] = useState<ChatSummary[]>([]);
   const [expandedChats, setExpandedChats] = useState<string[]>([]);
   const [todoFilter, setTodoFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -33,19 +56,16 @@ export default function Dashboard() {
         return;
       }
       const userId = session.user.id;
-
       try {
         const { data: summariesData, error } = await supabase
           .from('dev_logs')
           .select('summaries')
           .eq('user_id', userId)
           .single();
-
         if (error) throw error;
-
-        const existingSummaries = summariesData?.summaries || [];
+        const existingSummaries: ChatSummary[] = summariesData?.summaries || [];
         setSummaries(existingSummaries);
-      } catch (err) {
+      } catch (err: unknown) {
         setFetchError('Failed to fetch summaries');
         console.error(err);
       }
@@ -68,13 +88,10 @@ export default function Dashboard() {
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
     if (!userId) return;
-
     const updatedSummaries = summaries.filter(summary => summary.id !== chatId);
-
     const { error } = await supabase
       .from('dev_logs')
       .upsert({ user_id: userId, summaries: updatedSummaries }, { onConflict: 'user_id' });
-
     if (error) {
       toast.error('Delete failed');
       console.error(error);
@@ -86,32 +103,26 @@ export default function Dashboard() {
 
   const handleAppend = async () => {
     try {
-      const parsedJson = JSON.parse(newSummaryJson) as any; // Manual JSON input; no auto-optimized type
+      const parsedJson: Record<string, unknown> = JSON.parse(newSummaryJson); // Use Record for lint safety
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       if (!userId) throw new Error('No user');
-
       const { data: existing, error: fetchError } = await supabase
         .from('dev_logs')
         .select('summaries')
         .eq('user_id', userId)
         .single();
-
       if (fetchError) throw fetchError;
-
       const updatedSummaries = [...(existing?.summaries || []), parsedJson];
-
       const { error } = await supabase
         .from('dev_logs')
         .upsert({ user_id: userId, summaries: updatedSummaries }, { onConflict: 'user_id' });
-
       if (error) throw error;
-
-      setSummaries(updatedSummaries);
+      setSummaries(updatedSummaries as ChatSummary[]);
       setNewSummaryJson('');
       setShowAppendForm(false);
       toast.success('Summary appended!');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Append failed');
       console.error(err);
     }
@@ -123,10 +134,10 @@ export default function Dashboard() {
   };
 
   const filteredTodos = () => {
-    const allTodos = summaries.flatMap(summary => 
-      (summary.todos || []).map(todo => ({ description: todo.desc, priority: todo.pri })) // Map to old shape for compatibility
+    const allTodos = summaries.flatMap(summary =>
+      (summary.todos || []).map(todo => ({ desc: todo.desc, pri: todo.pri })) // Adjusted for lint/type safety
     );
-    return allTodos.filter(todo => todoFilter === 'all' || todo.priority.toLowerCase() === todoFilter);
+    return allTodos.filter(todo => todoFilter === 'all' || todo.pri.toLowerCase() === todoFilter);
   };
 
   if (fetchError) {
@@ -160,7 +171,6 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Development Logs</CardTitle>
@@ -178,7 +188,6 @@ export default function Dashboard() {
               {showTodos ? 'Hide To-Dos' : 'Show To-Dos'}
             </Button>
           </div>
-
           {showAppendForm && (
             <div className="space-y-2">
               <Textarea
@@ -190,7 +199,6 @@ export default function Dashboard() {
               <Button onClick={handleAppend}>Append to Logs</Button>
             </div>
           )}
-
           {showSummaries && (
             <>
               <h2 className="text-xl font-semibold">Chat Summaries</h2>
@@ -198,11 +206,11 @@ export default function Dashboard() {
                 <p>No summaries found.</p>
               ) : (
                 summaries.map((summary, idx) => {
-                  const expanded = expandedChats.includes(summary.id);
+                  const expanded = expandedChats.includes(summary.id as string);
                   return (
-                    <Card key={summary.id || idx} className="mt-4"> {/* Fallback key */}
+                    <Card key={summary.id as string || idx.toString()} className="mt-4"> {/* Lint-safe key */}
                       <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Chat Summary {idx + 1} (ID: {summary.id})</CardTitle>
+                        <CardTitle>Chat Summary {idx + 1} (ID: {summary.id as string})</CardTitle>
                         <div className="space-x-2">
                           <Button
                             variant="ghost"
@@ -214,11 +222,11 @@ export default function Dashboard() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(summary.id)}
+                            onClick={() => handleDelete(summary.id as string)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                          <Button onClick={() => toggleExpand(summary.id)}>
+                          <Button onClick={() => toggleExpand(summary.id as string)}>
                             {expanded ? 'Collapse' : 'Expand'}
                           </Button>
                         </div>
@@ -234,7 +242,6 @@ export default function Dashboard() {
               )}
             </>
           )}
-
           <div>
             <h2 className="text-xl font-semibold">Open To-Dos (Aggregated)</h2>
           </div>
@@ -256,8 +263,8 @@ export default function Dashboard() {
                 <TableBody>
                   {filteredTodos().map((todo, idx) => (
                     <TableRow key={idx}>
-                      <TableCell>{todo.description}</TableCell>
-                      <TableCell>{todo.priority}</TableCell>
+                      <TableCell>{todo.desc}</TableCell>
+                      <TableCell>{todo.pri}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

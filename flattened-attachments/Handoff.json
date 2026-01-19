@@ -2,11 +2,11 @@
   "workflow_version": "v2-simplified",
   "handoffOutputs": [
     {
-  "step": 1,
-  "description": "Fetch last ID from last-chat-id.json (via code_execution), increment, and display updated file content as JSON (for manual local update)",
-  "format": "code_box",
-  "fallback": "{ \"last_id\": 1 } (if file missing or empty)"
-}
+      "step": 1,
+      "description": "Fetch last ID from last-chat-id.json (via code_execution), increment, and display updated file content as JSON (for manual local update)",
+      "format": "code_box",
+      "fallback": "{ \"last_id\": 1 } (if file missing or empty)"
+    },
     {
       "step": 2,
       "description": "Display bulleted list of affected file base names (derived from chat; no extensions/paths)",
@@ -52,7 +52,7 @@
         "achvs": "array of strings",
         "decs": "array of strings",
         "todos": "array of {desc: string, pri: string}",
-        "nxt": "array of strings",
+        "nxt": "array of strings (include: 'Post-summary analysis: Scan context-triggers.json for active workflow triggers')",
         "ctx": "array of strings",
         "pid": "string or null",
         "stat": {

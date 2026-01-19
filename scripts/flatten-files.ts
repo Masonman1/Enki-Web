@@ -49,9 +49,22 @@ async function flattenDir(baseDir: string, currentDir: string, outputDir: string
 
 (async () => {
   try {
-    // Clear output folder first (safe for Node; force ignores non-existent)
-    await fs.rm(output, { recursive: true, force: true });
+        // Enhanced deletion: Fully rm dir, handle Windows locks/metadata, and recreate
+    try {
+      await fs.rm(output, { recursive: true, force: true });
+      console.log(`Output dir ${output} fully deleted (if existed)`);
+    } catch (rmErr) {
+      console.error(`Deletion error: ${rmErr.message} - Falling back to manual clear`);
+      // Fallback: List and unlink files if rm fails (e.g., stubborn Windows files)
+      const files = await fs.readdir(output).catch(() => []); // Safe if dir missing
+      for (const file of files) {
+        await fs.unlink(path.join(output, file)).catch(err => console.warn(`Skip unlink ${file}: ${err.message}`));
+      }
+      await fs.rm(output, { recursive: true, force: true }); // Retry rm
+    }
     await fs.mkdir(output, { recursive: true });
+    console.log(`Output dir ${output} recreated fresh`);
+   
     
     const count = await flattenDir(dir, dir, output);
     console.log(`Flattening complete—${count} files saved to: ${path.resolve(output)}`);
