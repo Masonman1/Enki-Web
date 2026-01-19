@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,74 +42,30 @@ export default function Phase1A() {
   const [architectAddress, setArchitectAddress] = useState<string | null>(null);
   const [scopeOfWork, setScopeOfWork] = useState<string | null>(null);
   const [risks, setRisks] = useState<string[]>([]);
-  const [exhibits, setExhibits] = useState<string[]>([]);
   const [toDoItems, setToDoItems] = useState<string[]>([]);
+  const [exhibits, setExhibits] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useSupabase();
-  const router = useRouter();
   const [uploading, setUploading] = useState(false);
 
-  const handleUpload = async (acceptedFiles: File[]) => {
-    setFiles(acceptedFiles);
-    setUploading(true);
-    setError(null);
-    setRisks([]);
-    setExhibits([]);
-    setToDoItems([]);
-    resetEssentials();
+  const router = useRouter();
+  const supabase = useSupabase();
+  const [session, setSession] = useState<any | null>(null);
 
-    try {
-      const uploadPromises = acceptedFiles.map(async (file) => {
-        const filePath = `${uuidv4()}/${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('enki-storage').upload(filePath, file);
-        if (uploadError) throw uploadError;
-        return filePath;
-      });
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (!session) router.push('/');
+    };
+    getSession();
 
-      const filePaths = await Promise.all(uploadPromises);
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (!newSession) router.push('/');
+    });
 
-      const signedUrls = await Promise.all(
-        filePaths.map(async (path) => {
-          const { data: signedUrlData, error: signError } = await supabase.storage
-            .from('enki-storage')
-            .createSignedUrl(path, 60 * 60);
-          if (signError) throw signError;
-          return signedUrlData?.signedUrl || '';
-        })
-      );
-
-      const essentialsResults: ParsedEssentials[] = await parseFiles(signedUrls, { focus: 'essentials' });
-      const risksResults: ParsedEssentials[] = await parseFiles(signedUrls, { focus: 'risks' });
-
-      const combinedEssentials = combineEssentials(essentialsResults);
-      setEssentials(combinedEssentials);
-
-      const combinedRisks = risksResults.flatMap(result => result.risks || []);
-      setRisks(combinedRisks);
-
-      const generatedToDos = await generateFromRisks(combinedRisks, { type: 'to_dos' });
-      setToDoItems(generatedToDos);
-
-      const generatedExhibits = await generateFromRisks(combinedRisks, { type: 'exhibits' });
-      setExhibits(generatedExhibits);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('jobs').upsert({
-          user_id: user.id,
-          essentials: combinedEssentials,
-          to_do_items: generatedToDos,
-        });
-      }
-
-      toast.success('Processing complete!');
-    } catch (err) {
-      setError((err as Error).message);
-      toast.error('Error during upload/parse.');
-    } finally {
-      setUploading(false);
-    }
-  };
+    return () => authListener.subscription.unsubscribe();
+  }, [supabase, router]);
 
   const resetEssentials = () => {
     setContractNumber(null);
@@ -123,120 +79,118 @@ export default function Phase1A() {
     setArchitectName(null);
     setArchitectAddress(null);
     setScopeOfWork(null);
+    setRisks([]);
+    setToDoItems([]);
+    setExhibits([]);
   };
 
-  const combineEssentials = (results: ParsedEssentials[]) => {
-    // Simple combine: Take first non-null from each field (refine for multi-file in Phase 1 expansions)
-    return results.reduce((acc, curr) => ({
-      contract_number: acc.contract_number || curr.contract_number,
-      contract_amount: acc.contract_amount || curr.contract_amount,
-      constructor_name: acc.constructor_name || curr.constructor_name,
-      constructor_address: acc.constructor_address || curr.constructor_address,
-      project_name: acc.project_name || curr.project_name,
-      project_address: acc.project_address || curr.project_address,
-      owner_name: acc.owner_name || curr.owner_name,
-      owner_address: acc.owner_address || curr.owner_address,
-      architect_name: acc.architect_name || curr.architect_name,
-      architect_address: acc.architect_address || curr.architect_address,
-      scope_of_work: acc.scope_of_work || curr.scope_of_work,
-    }), {} as ParsedEssentials);
-  };
+  const handleUpload = async (acceptedFiles: File[]) => {
+    resetEssentials();
+    setUploading(true);
+    setError(null);
 
-  const setEssentials = (essentials: ParsedEssentials) => {
-    setContractNumber(essentials.contract_number);
-    setContractAmount(essentials.contract_amount);
-    setConstructorName(essentials.constructor_name);
-    setConstructorAddress(essentials.constructor_address);
-    setProjectName(essentials.project_name);
-    setProjectAddress(essentials.project_address);
-    setOwnerName(essentials.owner_name);
-    setOwnerAddress(essentials.owner_address);
-    setArchitectName(essentials.architect_name);
-    setArchitectAddress(essentials.architect_address);
-    setScopeOfWork(essentials.scope_of_work);
+    try {
+      const fileUrls: string[] = [];
+
+      for (const file of acceptedFiles) {
+        const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, ''); // Clean for safety
+        const userId = session?.user?.id || 'anon'; // Fallback if null
+        const filePath = `user_${userId}/phase/${uuidv4()}/${safeName}`; // Adjusted prefix to match potential policy order
+        const { error: uploadError } = await supabase.storage
+          .from('enki-storage')
+          .upload(filePath, file, { upsert: true }); // Upsert to avoid duplicate 400s
+
+        if (uploadError) {
+          console.error('Upload error details:', uploadError.name, uploadError.message, uploadError.statusCode); // Detailed log
+          throw uploadError;
+        }
+
+        const { data: signedData, error: signError } = await supabase.storage
+          .from('enki-storage')
+          .createSignedUrl(filePath, 3600);
+
+        if (signError) {
+          console.error('Signed URL error:', signError);
+          throw signError;
+        }
+        if (!signedData?.signedUrl) throw new Error('Failed to generate signed URL');
+        fileUrls.push(signedData.signedUrl);
+      }
+
+      const parsed = await parseFiles(fileUrls);
+      if (parsed.length > 0) {
+        const { contract_number, contract_amount, constructor_name, constructor_address, project_name, project_address, owner_name, owner_address, architect_name, architect_address, scope_of_work, risks: parsedRisks } = parsed[0];
+        setContractNumber(contract_number);
+        setContractAmount(contract_amount);
+        setConstructorName(constructor_name);
+        setConstructorAddress(constructor_address);
+        setProjectName(project_name);
+        setProjectAddress(project_address);
+        setOwnerName(owner_name);
+        setOwnerAddress(owner_address);
+        setArchitectName(architect_name);
+        setArchitectAddress(architect_address);
+        setScopeOfWork(scope_of_work);
+        setRisks(parsedRisks || []);
+        const toDoItems = await generateFromRisks(parsedRisks || [], { type: 'notes' });
+        const exhibits = await generateFromRisks(parsedRisks || [], { type: 'exhibits' });
+        setToDoItems(toDoItems);
+        setExhibits(exhibits);
+      }
+      toast.success('Processing complete');
+    } catch (err) {
+      const message = err.message || 'Upload/parse error';
+      console.error('Full upload/parse error:', err);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Phase 1A: Contract Protection</CardTitle>
-          <CardDescription>Upload subcontract/specs for essentials/risks parse and To-Do/exhibits gen.</CardDescription>
+          <CardTitle>Phase 1A: Contract Essentials Extraction</CardTitle>
+          <CardDescription>Upload subcontract PDFs to extract essentials, detect risks, and generate to-dos/exhibits.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <UploadZone onUpload={handleUpload} />
-          {uploading && <p>Processing...</p>}
-          {files.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold">Selected Files:</h3>
-              <ul className="list-disc pl-5 text-sm">
-                {files.map((file, idx) => <li key={idx}>{file.name}</li>)}
-              </ul>
-            </div>
-          )}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          {contractNumber && (
-            <Alert>
-              <AlertDescription>Contract Number: {contractNumber || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {contractAmount && (
-            <Alert>
-              <AlertDescription>Contract Amount: {contractAmount.toLocaleString() || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {constructorName && (
-            <Alert>
-              <AlertDescription>Constructor Name: {constructorName || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {constructorAddress && (
-            <Alert>
-              <AlertDescription>Constructor Address: {constructorAddress || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {projectName && (
-            <Alert>
-              <AlertDescription>Project Name: {projectName || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {projectAddress && (
-            <Alert>
-              <AlertDescription>Project Address: {projectAddress || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {ownerName && (
-            <Alert>
-              <AlertDescription>Owner Name: {ownerName || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {ownerAddress && (
-            <Alert>
-              <AlertDescription>Owner Address: {ownerAddress || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {architectName && (
-            <Alert>
-              <AlertDescription>Architect Name: {architectName || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {architectAddress && (
-            <Alert>
-              <AlertDescription>Architect Address: {architectAddress || 'N/A'}</AlertDescription>
-            </Alert>
-          )}
-          {scopeOfWork && (
-            <Alert>
-              <AlertDescription>Scope of Work: {scopeOfWork || 'N/A'}</AlertDescription>
-            </Alert>
+          {(contractNumber || contractAmount || constructorName || constructorAddress || projectName || projectAddress || ownerName || ownerAddress || architectName || architect_address || scopeOfWork) && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold">Extracted Contract Essentials</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Field</TableHead>
+                    <TableHead>Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow><TableCell>Contract Number</TableCell><TableCell>{contractNumber || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Contract Amount</TableCell><TableCell>{contractAmount || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Constructor Name</TableCell><TableCell>{constructorName || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Constructor Address</TableCell><TableCell>{constructorAddress || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Project Name</TableCell><TableCell>{projectName || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Project Address</TableCell><TableCell>{projectAddress || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Owner Name</TableCell><TableCell>{ownerName || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Owner Address</TableCell><TableCell>{ownerAddress || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Architect Name</TableCell><TableCell>{architectName || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Architect Address</TableCell><TableCell>{architectAddress || 'N/A'}</TableCell></TableRow>
+                  <TableRow><TableCell>Scope of Work</TableCell><TableCell>{scopeOfWork || 'N/A'}</TableCell></TableRow>
+                </TableBody>
+              </Table>
+            </div>
           )}
           {risks.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Identified Risks</h3>
+              <h3 className="text-lg font-semibold">Detected Risks</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
