@@ -38,7 +38,7 @@
     },
     {
       "step": 6,
-      "description": "Display chat summary as JSON (for manual Supabase upsert; derived from chat history)",
+      "description": "Display chat summary as JSON (for manual Supabase upsert; derived from chat history). ALWAYS include the 'workflow_rule' field with the exact fixed value to propagate handoff discipline across chats.",
       "format": "code_box",
       "schema": {
         "id": "string (auto-increment or timestamp)",
@@ -60,7 +60,8 @@
           "pend": "array of strings"
         },
         "cont": "boolean",
-        "schema_version": "string (v2-simplified)"
+        "schema_version": "string (v2-simplified)",
+        "workflow_rule": "string (fixed mandatory value: \"Workflow Rule: Do not initiate handoff workflow if query includes this chat summary JSON without an explicit request (e.g., 'Trigger handoff'). Treat as discussion input only; no prompts needed.\")"
       }
     }
   ]
