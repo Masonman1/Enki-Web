@@ -51,7 +51,7 @@ export async function parseFilesAction(fileUrls: string[], focus: string = 'defa
       }
 
       // Restored modular prompts
-      let baseInstructions = `Parse this document for contract essentials and waterproofing-specific risks/misses. Return structured JSON only: {fields}. Use "Null" if not found. Infer from context if ambiguous, and prioritize values near headers or "subcontract" mentions.`;
+      const baseInstructions = `Parse this document for contract essentials and waterproofing-specific risks/misses. Return structured JSON only: {fields}. Use "Null" if not found. Infer from context if ambiguous, and prioritize values near headers or "subcontract" mentions.`;
       // Subcontract number module (refined with PO fallback)
       const subcontractNumberModule = `
 Search case-insensitively for variations like "Subcontract Number", "Sub No", "Contract No", "SC Number", "Agreement ID", "Sub ID", "SUBCONTRACT #", or similar. If no subcontract-specific number is found, fallback to purchase order variations like "PO", "Purchase Order", "PO No", "PO Number", "P.O.", or "PO:" as the identifier, particularly in top-right headers or standalone codes. Extract the alphanumeric value nearby (e.g., after colon, space, #, or in table/header). If ambiguous, infer from context (e.g., code near "subcontract", "agreement", or "PO"). Use "Null" if neither found.
@@ -171,7 +171,33 @@ Field: "risks": array of strings (single warning or empty)`;
       console.log('Raw Grok response:', responseContent); // Debug: Check this in terminal
       let parsed: ParsedContract;
       try {
-        parsed = JSON.parse(responseContent);
+        // Clean response: Trim and strip markdown code fences if present
+        const cleanedContent = responseContent.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
+        const rawParsed = JSON.parse(cleanedContent);
+
+        // Modular mapping: Flatten nested essentials and merge risks/misses
+        parsed = {
+          contract_number: rawParsed?.contract_essentials?.subcontract_number ?? null,
+          contract_amount: rawParsed?.contract_essentials?.contract_amount ?? null, // Add if present; fallback null
+          constructor_name: rawParsed?.contract_essentials?.parties?.contractor?.split(',')[0] ?? null,
+          constructor_address: rawParsed?.contract_essentials?.parties?.contractor?.split(',').slice(1).join(', ').trim() ?? null,
+          project_name: rawParsed?.contract_essentials?.project?.split(',')[0] ?? null,
+          project_address: rawParsed?.contract_essentials?.project?.split(',').slice(1).join(', ').trim() ?? null,
+          owner_name: rawParsed?.contract_essentials?.parties?.owner ?? null, // Adjust if owner key exists
+          owner_address: null, // Fallback; map if added in future prompts
+          architect_name: rawParsed?.contract_essentials?.parties?.architect ?? null,
+          architect_address: null, // Fallback
+          scope_of_work: rawParsed?.contract_essentials?.scope_of_work ?? rawParsed?.waterproofing_specific?.scope_indication ?? null,
+          risks: [
+            ...(rawParsed?.risks_misses?.schedule_risks ?? []),
+            ...(rawParsed?.risks_misses?.federal_project_risks ?? []),
+            ...(rawParsed?.risks_misses?.waterproofing_specific_misses ?? []),
+            ...(rawParsed?.risks_misses?.documentation_gaps ?? []),
+            ...(rawParsed?.waterproofing_specific_risks_misses?.risks ?? []),
+            ...(rawParsed?.waterproofing_specific_risks_misses?.misses ?? [])
+          ]
+        };
+
       } catch (jsonError) {
         console.error('JSON parse error:', jsonError, 'Raw:', responseContent);
         parsed = { contract_number: null, contract_amount: null, constructor_name: null, constructor_address: null, project_name: null, project_address: null, owner_name: null, owner_address: null, architect_name: null, architect_address: null, scope_of_work: null, risks: [] };

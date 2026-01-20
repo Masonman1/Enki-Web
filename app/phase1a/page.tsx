@@ -11,22 +11,8 @@ import { generateFromRisks } from "@/lib/ai-generate";
 import { useSupabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
-
-interface ParsedEssentials {
-  contract_number: string | null;
-  contract_amount: number | null;
-  constructor_name: string | null;
-  constructor_address: string | null;
-  project_name: string | null;
-  project_address: string | null;
-  owner_name: string | null;
-  owner_address: string | null;
-  architect_name: string | null;
-  architect_address: string | null;
-  scope_of_work: string | null;
-  risks: string[];
-}
+import type { ParsedContract } from '@/lib/ai-actions';
+import { type Session } from '@supabase/supabase-js';
 
 export default function Phase1A() {
   const [files, setFiles] = useState<File[]>([]);
@@ -46,7 +32,7 @@ export default function Phase1A() {
   const [exhibits, setExhibits] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const router = useRouter();
   const supabase = useSupabase();
 
@@ -99,7 +85,7 @@ export default function Phase1A() {
         fileUrls.push(signedData.signedUrl);
       }
 
-      const parsedResults = await parseFiles(fileUrls, { focus: 'contract' });
+      const parsedResults: ParsedContract[] = await parseFiles(fileUrls);
       console.log('Debug: parsedResults from parseFiles:', parsedResults); // For verification
 
       const allRisks = parsedResults.flatMap(r => r.risks || []);
@@ -146,6 +132,16 @@ export default function Phase1A() {
         </CardHeader>
         <CardContent>
           <UploadZone onUpload={handleUpload} />
+          {files.length > 0 && (
+  <div className="mt-4">
+    <h4 className="text-sm font-medium">Uploaded Files:</h4>
+    <ul className="list-disc pl-5">
+      {files.map((file, idx) => (
+        <li key={idx} className="text-sm">{file.name}</li>
+      ))}
+    </ul>
+  </div>
+)}
           {error && (
             <Alert variant="destructive" className="mt-4">
               <AlertDescription>{error}</AlertDescription>
