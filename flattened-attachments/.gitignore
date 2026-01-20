@@ -67,3 +67,5 @@ public/build/  # If using custom public assets in Phase 1
 # Optional: Ignore large uploads or Phase 1 test data (e.g., PDFs for waterproofing specs)
 uploads/
 test-data/
+flattened-attachments/
+__tests__/

@@ -52,7 +52,7 @@
         "achvs": "array of strings",
         "decs": "array of strings",
         "todos": "array of {desc: string, pri: string}",
-        "nxt": "array of strings (include: 'Post-summary analysis: Scan context-triggers.json for active workflow triggers')",
+        "nxt": "array of strings (include: 'Post-summary analysis: Scan context-triggers.json for active workflow triggers', 'Dynamically scan key workspace files using code_execution tool at chat start (files: package.json, next.config.ts, tsconfig.json, eslint.config.mjs, app/layout.tsx, lib/ai-actions.ts, lib/ai-generate.ts, lib/supabase.ts, supabase-config.json, context-triggers.json). Summarize contents and override any static <DOCUMENT> tags.')",
         "ctx": "array of strings",
         "pid": "string or null",
         "stat": {

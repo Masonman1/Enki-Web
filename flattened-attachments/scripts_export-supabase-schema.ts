@@ -1,81 +1,82 @@
-// scripts/export-supabase-schema.ts
+// scripts/export-supabase-schema.ts (Node.js script for Supabase schema export; run with: npx ts-node scripts/export-supabase-schema.ts)
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs/promises';
-import dotenv from 'dotenv'; // For loading .env.local
-import path from 'path'; // Built-in for paths
+import path from 'path';
 
-// Load env vars from .env.local
-dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
-
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing Supabase env vars');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+async function fetchBuckets(): Promise<Record<string, unknown>[]> {
+  const { data, error } = await supabase.rpc('get_buckets_with_rls_policies');
+  if (error) throw error;
+  return data as Record<string, unknown>[];
+}
+
+async function fetchTables(): Promise<string[]> {
+  const { data, error } = await supabase.rpc('get_tables');
+  if (error) throw error;
+  return data as string[];
+}
+
+async function fetchColumns(table: string): Promise<Record<string, unknown>[]> {
+  const { data, error } = await supabase.rpc('get_columns', { tablename: table });
+  if (error) throw error;
+  return data as Record<string, unknown>[];
+}
+
+async function fetchRlsPolicies(table: string): Promise<Record<string, unknown>[]> {
+  const { data, error } = await supabase.rpc('get_rls_policies', { tablename: table });
+  if (error) throw error;
+  return data as Record<string, unknown>[];
+}
+
 async function exportSchema() {
-  const output: any = {
-    buckets: {},
-    tables: {},
-    last_updated: new Date().toISOString(),
-    changes: [], // Manually add notes or automate from git log later
-  };
-
-  // Fetch buckets and structure
-  const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-  if (bucketsError) throw bucketsError;
-  for (const bucket of buckets) {
-    const { data: objects, error: objectsError } = await supabase.storage.from(bucket.id).list('', { limit: 10 }); // Sample paths for structure inference
-    if (objectsError) throw objectsError;
-    output.buckets[bucket.id] = {
-      structure: objects?.map(o => o.name.replace(/^[a-f0-9-]{36}/, 'user_{id}'))?.join(', ') || 'Empty', // Anonymize user IDs in paths
-      permissions: bucket.public ? 'Public' : 'Private', // Expand with policies
+  try {
+    const config: Record<string, unknown> = {
+      buckets: {},
+      tables: {},
+      last_updated: new Date().toISOString(),
+      changes: [],
     };
-    // Fetch RLS-like policies (storage.objects table)
-    const { data: policies, error: policiesError } = await supabase.rpc('get_policies_for_table', { schema_name: 'storage', table_name: 'objects' });
-    if (policiesError) throw policiesError;
-    output.buckets[bucket.id].rls_policies = policies || [];
-  }
 
-  // Fetch tables via RPC (create in Supabase dashboard if not exists)
-  try {
-    const { data: tablesData, error: tablesError } = await supabase.rpc('get_tables', { schema_name: 'public' });
-    if (tablesError) throw tablesError;
-    const tables = tablesData?.map((t: any) => t) || []; // SETOF text returns array of strings
-    console.log('Tables fetched:', tables); // Debug: Should show ['jobs', 'products', 'dev_logs']
-
-    for (const table_name of tables) {
-      // Fetch columns via RPC (uncommented)
-      const { data: columnsData, error: columnsError } = await supabase.rpc('get_columns', { schema_name: 'public', table_name });
-      if (columnsError) throw columnsError;
-      output.tables[table_name] = {
-        columns: columnsData?.map((c: any) => `${c.column_name}: ${c.data_type}`) || [],
+    // Fetch buckets
+    const buckets = await fetchBuckets();
+    for (const bucket of buckets) {
+      const bucketName = bucket.bucket_name as string;
+      config.buckets[bucketName] = {
+        structure: bucket.structure as string,
+        permissions: bucket.permissions as string,
+        rls_policies: bucket.rls_policies as Record<string, unknown>[],
       };
-      // Fetch RLS policies
-      const { data: rls, error: rlsError } = await supabase.rpc('get_policies_for_table', { schema_name: 'public', table_name });
-      if (rlsError) throw rlsError;
-      output.tables[table_name].rls_policies = rls || [];
     }
-  } catch (tablesFetchError) {
-    console.error('Tables fetch error:', tablesFetchError);
-  }
 
-  // Write to file
-  console.log('Final output before write:', JSON.stringify(output, null, 2)); // Debug: See full JSON
-  const filePath = path.join(process.cwd(), 'supabase-config.json');
-  console.log('Writing to:', filePath); // Debug: Confirm path
-  try {
-    await fs.writeFile(filePath, JSON.stringify(output, null, 2));
-    console.log(`Schema exported to ${filePath}`);
-  } catch (writeError) {
-    console.error('Write error:', writeError); // Catch fs issues
+    // Fetch tables
+    const tables = await fetchTables();
+    for (const table of tables) {
+      const columns = await fetchColumns(table);
+      const policies = await fetchRlsPolicies(table);
+      config.tables[table] = {
+        columns,
+        rls_policies: policies,
+      };
+    }
+
+    // Write to file
+    const outputPath = path.join(process.cwd(), 'supabase-config.json');
+    await fs.writeFile(outputPath, JSON.stringify(config, null, 2));
+    console.log(`Schema exported to ${outputPath}`);
+  } catch (error) {
+    console.error('Export error:', error);
   }
 }
 
-exportSchema().catch(console.error);
+exportSchema();

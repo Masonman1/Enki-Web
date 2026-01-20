@@ -1,4 +1,5 @@
 // lib/phase-hook.ts (replace handleUpload; ensure import { v4 as uuidv4 } from 'uuid'; at top)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleUpload = async (acceptedFiles: File[]) => {
   if (!session?.user?.id) {
     setError('Authentication required');
