@@ -1,3 +1,6 @@
+// app/page.tsx (UPDATED: Moved all useState and useEffect hooks to top-level before early return to resolve react-hooks/rules-of-hooks lint errors)
+// Note: Hooks now unconditional; early return for authLoading follows after all hook calls
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -5,19 +8,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/lib/use-auth";
 import { useSupabase } from "@/lib/supabase";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const router = useRouter();
-  const supabase = useSupabase();
+  const { session, loading: authLoading } = useAuth(); // Top-level hook
+  const supabase = useSupabase(); // Top-level hook
+  const router = useRouter(); // Top-level hook
+  const [email, setEmail] = useState(""); // Moved to top
+  const [password, setPassword] = useState(""); // Moved to top
+  const [error, setError] = useState<string | null>(null); // Moved to top
+  const [loading, setLoading] = useState(false); // Moved to top
+  const [isSignUp, setIsSignUp] = useState(false); // Moved to top
+
+  useEffect(() => { // Moved to top (unconditional)
+    if (session) {
+      router.push('/dashboard');
+    }
+  }, [session, router]);
+
+  if (authLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,28 +50,26 @@ export default function Home() {
       if (result.error) {
         setError(result.error.message);
       } else {
-        console.log(isSignUp ? "Signed up successfully!" : "Signed in successfully!");
-        router.push("/dashboard");
+        router.push('/dashboard');
       }
-    } catch {
-      setError("An unexpected error occurred.");
+    } catch (err) {
+      setError('Unexpected error');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <Card className="w-[400px]">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Welcome to Enki</CardTitle>
-          <CardDescription>
-            AI-powered tool for waterproofing subcontractors. {isSignUp ? "Sign up" : "Sign in"} to access Phase 1 features.
-          </CardDescription>
+          <CardTitle>{isSignUp ? "Sign Up" : "Sign In"}</CardTitle>
+          <CardDescription>{isSignUp ? "Create a new account" : "Enter your credentials"}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -66,7 +79,7 @@ export default function Home() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
