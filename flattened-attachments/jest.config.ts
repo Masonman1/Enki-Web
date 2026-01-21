@@ -10,7 +10,8 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'] // Keep if you have it; optional
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Keep if you have it; optional
+  testPathIgnorePatterns: ['/node_modules/', '/flattened-attachments/'] // NEW: Ignore temp flattened folder to resolve haste collisions and skip duplicates
 };
 
 export default config;

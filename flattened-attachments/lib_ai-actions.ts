@@ -35,54 +35,49 @@ if (!process.env.GROK_API_KEY) {
   throw new Error('GROK_API_KEY missing from .env.local');
 }
 
-export async function parseFilesAction(fileUrls: string[], focus: string = 'default'): Promise<ParsedContract[]> {
+export async function parseFilesAction(fileUrls: string[], focus: string = 'phase1a') {
   const results: ParsedContract[] = [];
+
+  // Dynamic prompt composer (add more phases as implemented)
+  const promptComposer = focus === 'phase1a' ? composePhase1aPrompt : composePhase1aPrompt; // Fallback to 1A; update for others
+  // Add switches for other phases as implemented (e.g., if (focus === 'phase1b') promptComposer = composePhase1bPrompt;)
 
   for (const url of fileUrls) {
     try {
-      // Fetch PDF from signed URL (unchanged)
+      // Fetch and parse PDF (unchanged)
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Fetch error: ${response.status}`);
       const buffer = await response.arrayBuffer();
-      const data = await pdf(Buffer.from(buffer)); // Extract text reliably
-      const text = data.text; // Clean extracted text
+      const { text } = await pdf(Buffer.from(buffer));
 
-      // NEW: Phase-specific prompt composition (extensible for other focuses/phases)
-      let prompt = '';
-      let risksFlattener = () => []; // Default fallback (no param needed for empty array)
-      if (focus === 'phase1a' || focus === 'prebid' || focus === 'default') { // Phase 1A default
-        prompt = composePhase1aPrompt(text); // Uses extracted modules
-        risksFlattener = flattenRisks; // Phase-specific flattener
-      } else {
-        // Stub for future phases (e.g., if focus === 'phase1b', import from 1b-prompts.ts)
-        throw new Error(`Unsupported focus: ${focus} – Add phase-specific prompts`);
-      }
-
-      // Call Grok (unchanged)
+      // Get completion from Grok
       const completion = await grok.chat.completions.create({
-        model: 'grok-4-1-fast-non-reasoning',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.1, // Low for structured output
-        max_tokens: 2000,
-      });
+  messages: [{ role: 'user', content: promptComposer(text) }],
+  model: 'grok-4-1-fast-non-reasoning',
+  temperature: 0.3, // Low for structured output
+  max_tokens: 4096,
+});
 
-      const responseContent = completion.choices[0]?.message?.content || '{}';
+const rawContent = completion.choices[0]?.message?.content || ''; // Changed to const
 
-      // Response cleaning (add if needed; e.g., strip markdown as in prior chats)
-      const cleanedContent = responseContent
-        .replace(/```json\s*/g, '')
-        .replace(/```\s*/g, '')
-        .trim();
+// NEW: Clean markdown wrappers if present (handles Grok's common formatting)
+let cleanedContent = rawContent.trim();
+if (cleanedContent.startsWith('```json') && cleanedContent.endsWith('```')) {
+  cleanedContent = cleanedContent.slice(7, -3).trim(); // Remove ```json and trailing ```
+} else if (cleanedContent.startsWith('```') && cleanedContent.endsWith('```')) {
+  cleanedContent = cleanedContent.slice(3, -3).trim(); // Fallback for plain ```
+}
 
-      let rawParsed: Record<string, unknown>;
-      try {
-        rawParsed = JSON.parse(cleanedContent);
-      } catch (jsonError) {
-        console.error('JSON parse error:', jsonError, 'Raw:', cleanedContent);
-        rawParsed = {};
-      }
+let rawParsed: Record<string, unknown>; // Changed from any for stricter typing
+try {
+  rawParsed = JSON.parse(cleanedContent); // Use cleaned version
+} catch (parseErr) {
+  console.error('JSON parse error:', parseErr);
+  rawParsed = {};
+}
 
-      // Flatten risks using phase-specific logic (unchanged logic, now imported)
+      const risksFlattener = flattenRisks; // Alias for clarity (imported)
+
       const parsed: ParsedContract = {
         contract_number: rawParsed?.contract_number ?? null,
         contract_amount: rawParsed?.contract_amount ?? null,
