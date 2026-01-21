@@ -1,7 +1,0 @@
-module.exports = {
-  presets: [
-    '@babel/preset-env', // Modern JS
-    '@babel/preset-react', // JSX/React
-    '@babel/preset-typescript' // TS support
-  ]
-};
