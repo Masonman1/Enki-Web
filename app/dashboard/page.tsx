@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/lib/use-auth"; // Centralized auth hook
 import { useSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +37,7 @@ interface ChatSummary {
 }
 
 export default function Dashboard() {
+  const { session, loading: authLoading, logout } = useAuth(); // Use centralized auth
   const router = useRouter();
   const supabase = useSupabase();
 
@@ -50,10 +52,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchSummaries() {
-      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        router.push('/');
-        return;
+        return; // Hook handles redirect
       }
       const userId = session.user.id;
       try {
@@ -70,8 +70,11 @@ export default function Dashboard() {
         console.error(err);
       }
     }
-    fetchSummaries();
-  }, [supabase, router]);
+
+    if (!authLoading && session) {
+      fetchSummaries();
+    }
+  }, [authLoading, session, supabase, router]);
 
   const toggleExpand = (chatId: string) => {
     setExpandedChats(prev =>
@@ -85,7 +88,7 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (chatId: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
     const userId = session?.user?.id;
     if (!userId) return;
     const updatedSummaries = summaries.filter(summary => summary.id !== chatId);
@@ -104,7 +107,7 @@ export default function Dashboard() {
   const handleAppend = async () => {
     try {
       const parsedJson: Record<string, unknown> = JSON.parse(newSummaryJson); // Use Record for lint safety
-      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No user');
       const userId = session?.user?.id;
       if (!userId) throw new Error('No user');
       const { data: existing, error: fetchError } = await supabase
@@ -129,8 +132,7 @@ export default function Dashboard() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+    await logout(); // Use hook's logout
   };
 
   const filteredTodos = () => {
@@ -139,6 +141,10 @@ export default function Dashboard() {
     );
     return allTodos.filter(todo => todoFilter === 'all' || todo.pri.toLowerCase() === todoFilter);
   };
+
+  if (authLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
 
   if (fetchError) {
     return (
