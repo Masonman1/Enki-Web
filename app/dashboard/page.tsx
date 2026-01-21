@@ -1,6 +1,4 @@
-// app/dashboard/page.tsx (MERGED: Based directly on workspace template; integrated useAuth for auth centralization without duplicated useEffect/session logic; applied lint fixes by making loadSummaries sync (removed async/try-catch for stubs) and calling in useEffect – avoids setState lint issues as sync; restored all handlers/UI from template without changes; added phase navigation in separate Card per user feedback; generated 22 stub summaries by duplicating template stub with incremental ids/dates for testing expand/collapse)
-// Note: If real Supabase integration needed, reinstate async/try-catch in loadSummaries and handle lint (e.g., // eslint-disable-next-line react-hooks/set-state-in-effect); stubs ensure 22 for expand test
-
+// app/dashboard/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAuth } from '@/lib/use-auth'; // NEW: Centralized auth
+import { useSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Clipboard, Trash2 } from 'lucide-react';
 import toast from "react-hot-toast";
-import { formatForHuman } from "@/lib/ai-generate";
+import { formatForHuman } from "@/lib/ai-generate"; // Keep for human-readable display in summaries (manual)
 
 interface TodoItem {
   desc: string;
@@ -38,154 +36,218 @@ interface ChatSummary {
 }
 
 export default function Dashboard() {
-  const { session, loading, logout: handleLogout } = useAuth(); // NEW: Replaces manual session/useEffect
-  const [chatSummaries, setChatSummaries] = useState<ChatSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [todoFilter, setTodoFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
-  const [newSummary, setNewSummary] = useState('');
   const router = useRouter();
+  const supabase = useSupabase();
 
-  const loadSummaries = () => { // UPDATED: Sync (no async) for lint; generates 22 stubs
-    const summaries: ChatSummary[] = [];
-    for (let i = 1; i <= 22; i++) {
-      summaries.push({
-        id: i.toString(),
-        dt: `2026-01-${i.toString().padStart(2, '0')}`,
-        overview: `Chat summary ${i} for Enki development.`,
-        achvs: [`Achievement ${i}A`, `Achievement ${i}B`],
-        decs: [`Decision ${i}A`, `Decision ${i}B`],
-        todos: [
-          { desc: `Todo ${i} high`, pri: 'high' },
-          { desc: `Todo ${i} medium`, pri: 'medium' },
-          { desc: `Todo ${i} low`, pri: 'low' },
-        ],
-        nxt: [`Next step ${i}A`, `Next step ${i}B`],
-        ctx: [`Context ${i}A`, `Context ${i}B`],
-        pid: (i > 1 ? (i - 1).toString() : null),
-        stat: { tested: [`Test ${i}A`], pend: [`Pend ${i}A`] },
-        cont: i % 2 === 0,
-        schema_version: 'v2-simplified',
-      });
-    }
-    setChatSummaries(summaries);
-  };
+  const [summaries, setSummaries] = useState<ChatSummary[]>([]);
+  const [expandedChats, setExpandedChats] = useState<string[]>([]);
+  const [todoFilter, setTodoFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [newSummaryJson, setNewSummaryJson] = useState<string>('');
+  const [showAppendForm, setShowAppendForm] = useState(false);
+  const [showSummaries, setShowSummaries] = useState(false);
+  const [showTodos, setShowTodos] = useState(false);
 
   useEffect(() => {
-    loadSummaries();
-  }, []);
+    async function fetchSummaries() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/');
+        return;
+      }
+      const userId = session.user.id;
+      try {
+        const { data: summariesData, error } = await supabase
+          .from('dev_logs')
+          .select('summaries')
+          .eq('user_id', userId)
+          .single();
+        if (error) throw error;
+        const existingSummaries: ChatSummary[] = summariesData?.summaries || [];
+        setSummaries(existingSummaries);
+      } catch (err: unknown) {
+        setFetchError('Failed to fetch summaries');
+        console.error(err);
+      }
+    }
+    fetchSummaries();
+  }, [supabase, router]);
 
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  }
-
-  if (!session) {
-    router.push('/');
-    return null;
-  }
-
-  const filteredTodos = () => {
-    return chatSummaries.flatMap(summary => summary.todos || []).filter(todo => 
-      todoFilter === 'all' || todo.pri === todoFilter
+  const toggleExpand = (chatId: string) => {
+    setExpandedChats(prev =>
+      prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]
     );
   };
 
-  const handleAddSummary = () => {
-    try {
-      const parsed = JSON.parse(newSummary);
-      setChatSummaries(prev => [...prev, parsed]);
-      setNewSummary('');
-      toast.success('Summary added');
-    } catch {
-      toast.error('Invalid JSON');
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  const handleDelete = async (chatId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) return;
+    const updatedSummaries = summaries.filter(summary => summary.id !== chatId);
+    const { error } = await supabase
+      .from('dev_logs')
+      .upsert({ user_id: userId, summaries: updatedSummaries }, { onConflict: 'user_id' });
+    if (error) {
+      toast.error('Delete failed');
+      console.error(error);
+    } else {
+      setSummaries(updatedSummaries);
+      toast.success('Summary deleted');
     }
   };
 
-  const handleCopySummary = (summary: ChatSummary) => {
-    navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
-    toast.success('Copied to clipboard');
+  const handleAppend = async () => {
+    try {
+      const parsedJson: Record<string, unknown> = JSON.parse(newSummaryJson); // Use Record for lint safety
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('No user');
+      const { data: existing, error: fetchError } = await supabase
+        .from('dev_logs')
+        .select('summaries')
+        .eq('user_id', userId)
+        .single();
+      if (fetchError) throw fetchError;
+      const updatedSummaries = [...(existing?.summaries || []), parsedJson];
+      const { error } = await supabase
+        .from('dev_logs')
+        .upsert({ user_id: userId, summaries: updatedSummaries }, { onConflict: 'user_id' });
+      if (error) throw error;
+      setSummaries(updatedSummaries as ChatSummary[]);
+      setNewSummaryJson('');
+      setShowAppendForm(false);
+      toast.success('Summary appended!');
+    } catch (err: unknown) {
+      toast.error('Append failed');
+      console.error(err);
+    }
   };
 
-  const handleDeleteSummary = (id: string) => {
-    setChatSummaries(prev => prev.filter(s => s.id !== id));
-    toast.success('Summary deleted');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
   };
+
+  const filteredTodos = () => {
+    const allTodos = summaries.flatMap(summary =>
+      (summary.todos || []).map(todo => ({ desc: todo.desc, pri: todo.pri })) // Adjusted for lint/type safety
+    );
+    return allTodos.filter(todo => todoFilter === 'all' || todo.pri.toLowerCase() === todoFilter);
+  };
+
+  if (fetchError) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{fetchError}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-4">
-      {/* NEW: Separate Card for phase navigation per user feedback */}
-      <Card className="mb-6">
+    <div className="container mx-auto p-4 space-y-6">
+      <Card>
         <CardHeader>
-          <CardTitle>Phase Navigation</CardTitle>
-          <CardDescription>Select a phase to proceed</CardDescription>
+          <CardTitle>Enki Phase 1 Dashboard</CardTitle>
+          <CardDescription>Waterproofing PM Force Multiplier</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <Button onClick={() => router.push('/phase1a')}>Phase 1A</Button>
-            <Button onClick={() => router.push('/phase1b')}>Phase 1B</Button>
-            <Button onClick={() => router.push('/phase1c')}>Phase 1C</Button>
-            <Button onClick={() => router.push('/phase1d')}>Phase 1D</Button>
-            <Button onClick={() => router.push('/phase1e')}>Phase 1E</Button>
-            <Button onClick={() => router.push('/phase1f')}>Phase 1F</Button>
-            <Button onClick={() => router.push('/phase1g')}>Phase 1G</Button>
-            <Button onClick={() => router.push('/phase1h')}>Phase 1H</Button>
-            <Button onClick={() => router.push('/phase1i')}>Phase 1I</Button>
-            <Button onClick={() => router.push('/phase1j')}>Phase 1J</Button>
-            <Button onClick={() => router.push('/phase1k')}>Phase 1K</Button>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Button onClick={() => router.push('/phase1a')}>Phase 1A: Pre-Bid Protection</Button>
+            <Button onClick={() => router.push('/phase1b')}>Phase 1B: Job Setup</Button>
+            <Button onClick={() => router.push('/phase1c')}>Phase 1C: Submittals</Button>
+            <Button onClick={() => router.push('/phase1d')}>Phase 1D: RFIs</Button>
+            <Button onClick={() => router.push('/phase1e')}>Phase 1E: Submittals Log</Button>
+            <Button onClick={() => router.push('/phase1f')}>Phase 1F: Scheduling/Progress</Button>
+            <Button onClick={() => router.push('/phase1g')}>Phase 1G: Change Orders</Button>
+            <Button onClick={() => router.push('/phase1h')}>Phase 1H: Procurement</Button>
+            <Button onClick={() => router.push('/phase1i')}>Phase 1I: Invoice Review</Button>
+            <Button onClick={() => router.push('/phase1j')}>Phase 1J: Billing</Button>
+            <Button onClick={() => router.push('/phase1k')}>Phase 1K: Closeout</Button>
           </div>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
-          <CardTitle>Enki Dashboard</CardTitle>
-          <CardDescription>Manage chat summaries and to-dos</CardDescription>
+          <CardTitle>Development Logs</CardTitle>
+          <CardDescription>Manage chat summaries and aggregated To-Dos</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-2">Chat Summaries</h2>
-            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Overview</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {chatSummaries.map(summary => (
-                  <TableRow key={summary.id}>
-                    <TableCell>{summary.id}</TableCell>
-                    <TableCell>{summary.dt}</TableCell>
-                    <TableCell>{formatForHuman(summary)}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopySummary(summary)}>
-                        <Clipboard className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteSummary(summary.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="flex space-x-4">
+            <Button onClick={() => setShowAppendForm(!showAppendForm)}>
+              {showAppendForm ? 'Cancel Append' : 'Append New Summary'}
+            </Button>
+            <Button onClick={() => setShowSummaries(!showSummaries)}>
+              {showSummaries ? 'Hide Summaries' : 'Show Summaries'}
+            </Button>
+            <Button onClick={() => setShowTodos(!showTodos)}>
+              {showTodos ? 'Hide To-Dos' : 'Show To-Dos'}
+            </Button>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold mb-2">Add New Summary</h2>
-            <Textarea
-              value={newSummary}
-              onChange={e => setNewSummary(e.target.value)}
-              placeholder="Paste JSON summary here"
-              rows={10}
-            />
-            <Button onClick={handleAddSummary} className="mt-2">Add Summary</Button>
-          </div>
-          {chatSummaries.length > 0 && (
+          {showAppendForm && (
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Paste optimized JSON summary here"
+                value={newSummaryJson}
+                onChange={e => setNewSummaryJson(e.target.value)}
+                rows={10}
+              />
+              <Button onClick={handleAppend}>Append to Logs</Button>
+            </div>
+          )}
+          {showSummaries && (
             <>
-              <h2 className="text-xl font-semibold mb-2">Filtered To-Dos</h2>
-              <div className="flex space-x-2 mb-2">
+              <h2 className="text-xl font-semibold">Chat Summaries</h2>
+              {summaries.length === 0 ? (
+                <p>No summaries found.</p>
+              ) : (
+                summaries.map((summary, idx) => {
+                  const expanded = expandedChats.includes(summary.id as string);
+                  return (
+                    <Card key={summary.id as string || idx.toString()} className="mt-4"> {/* Lint-safe key */}
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Chat Summary {idx + 1} (ID: {summary.id as string})</CardTitle>
+                        <div className="space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopy(formatForHuman(summary))}
+                          >
+                            <Clipboard className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(summary.id as string)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button onClick={() => toggleExpand(summary.id as string)}>
+                            {expanded ? 'Collapse' : 'Expand'}
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      {expanded && (
+                        <CardContent>
+                          <pre className="whitespace-pre-wrap text-sm">{formatForHuman(summary)}</pre> {/* Human-readable display */}
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })
+              )}
+            </>
+          )}
+          <div>
+            <h2 className="text-xl font-semibold">Open To-Dos (Aggregated)</h2>
+          </div>
+          {showTodos && (
+            <>
+              <div className="space-x-2 mb-2">
                 <Button variant={todoFilter === 'all' ? 'default' : 'outline'} onClick={() => setTodoFilter('all')}>All</Button>
                 <Button variant={todoFilter === 'high' ? 'default' : 'outline'} onClick={() => setTodoFilter('high')}>High</Button>
                 <Button variant={todoFilter === 'medium' ? 'default' : 'outline'} onClick={() => setTodoFilter('medium')}>Medium</Button>
