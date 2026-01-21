@@ -1,4 +1,4 @@
-// components/phase-layout.tsx
+// components/phase-layout.tsx (UPDATED: Removed unused 'uploading' prop to fix lint warning; loading now fully guards UI including UploadZone)
 'use client';
 
 import { ReactNode } from 'react';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react'; // NEW: Add Loader2 for spinner
 import UploadZone from '@/components/forms/upload-zone';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 interface PhaseLayoutProps {
   title: string;
   description: string;
-  uploading: boolean;
+  loading: boolean; // Centralized loading prop (e.g., for session/init/upload; guards all)
   error: string | null;
   risks: string[];
   generatedItems: string[];
@@ -29,18 +29,25 @@ interface PhaseLayoutProps {
 export default function PhaseLayout({
   title,
   description,
-  uploading,
+  loading, // Use for full guard/spinner (covers init + uploading via hook)
   error,
   risks,
   generatedItems,
   parsedEssentials,
   handleUpload,
   generateType,
-  // Removed: context, (from destructuring)
-  onEmailClick = () => toast.success(`Stub: One-click email ${generateType} to GC`),
+  onEmailClick = () => toast.success(`Stub: One-click email ${generateType}`), // Default stub
   children,
 }: PhaseLayoutProps) {
   const router = useRouter();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -60,9 +67,7 @@ export default function PhaseLayout({
             </Alert>
           )}
 
-          {uploading && <p className="mt-4">Uploading and processing...</p>}
-
-          {parsedEssentials && Object.keys(parsedEssentials).length > 0 && (
+          {parsedEssentials && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Parsed Essentials</h3>
               <Table>
@@ -76,7 +81,7 @@ export default function PhaseLayout({
                   {Object.entries(parsedEssentials).map(([key, value]) => (
                     <TableRow key={key}>
                       <TableCell>{key}</TableCell>
-                      <TableCell>{value ? value.toString() : 'Null'}</TableCell>
+                      <TableCell>{value as string ?? 'N/A'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -86,7 +91,7 @@ export default function PhaseLayout({
 
           {risks.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Identified Risks</h3>
+              <h3 className="text-lg font-semibold">Detected Risks</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
