@@ -106,7 +106,15 @@ export default function Dashboard() {
 
   const handleAppend = async () => {
     try {
-      const parsedJson: Record<string, unknown> = JSON.parse(newSummaryJson); // Use Record for lint safety
+      // Enhanced cleaning: Strip any leading/trailing fences (```json, ```, etc.), collapse extra whitespace/newlines
+      let cleanedJson = newSummaryJson.trim()
+        .replace(/^```(json|bash|plaintext|)?/i, '') // Remove starting fence with optional label
+        .replace(/```$/i, '') // Remove ending fence
+        .replace(/\s+/g, ' ') // Collapse multiple spaces/newlines to single space
+        .trim();
+      // Broader regex for trailing commas: Remove ',' before ] or } (with optional whitespace)
+      cleanedJson = cleanedJson.replace(/,\s*([\]}])/g, '$1');
+      const parsedJson: Record<string, unknown> = JSON.parse(cleanedJson); // Use Record for lint safety
       if (!session) throw new Error('No user');
       const userId = session?.user?.id;
       if (!userId) throw new Error('No user');
@@ -126,7 +134,8 @@ export default function Dashboard() {
       setShowAppendForm(false);
       toast.success('Summary appended!');
     } catch (err: unknown) {
-      toast.error('Append failed');
+      const message = err instanceof Error ? err.message : 'Append failed - Check JSON format';
+      toast.error(message);
       console.error(err);
     }
   };

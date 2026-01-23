@@ -1,0 +1,95 @@
+{
+  "version": "1.0",
+  "date": "2026-01-22",
+  "overview": "Detailed refinements to Enki Phase 1 from chat discussions, building on master blueprint. Focuses on waterproofing PM workflows for small subcontractors, with patterns: upload/parse/AI-assist/generate/review/one-click. Preserves all granularity, including user inputs, proposal variants, contract examples, and decisions.",
+  "sections": [
+    {
+      "name": "Real-World PM Process Mapping to Phase 1A Subphases",
+      "details": [
+        "1a-i: Scope Review/Comparison/Red-Lining: Piece together scope from subcontract + proposal (e.g., Hillmont screenshot's vague 'Retaining walls' at $10,050 vs. Greenway-Gartens' detailed $3,300 slab edges per detail 2/A07.20) + emails. AI flags mismatches, value deltas (e.g., contract $812K vs. proposal total), and waterproofing risks (e.g., no substrate spec for concrete pours).",
+        "1a-ii: Exhibit Generation with Triggers: Dynamic clauses based on parsed scope (e.g., if 'membrane' detected, add 'GC confirms 4-week lead time; hold harmless for delays'). Boilerplate for exclusions (e.g., de-watering from proposals). Editable UI preview.",
+        "1a-iii: Negotiate/Revise/Sign: One-click email drafts with red-lines/exhibits; re-upload revised contract for AI diffs (e.g., 'GC accepted VOC clause'). Stub e-sign."
+      ]
+    },
+    {
+      "name": "Proposal Parsing and Trust-Tiered Variants",
+      "details": [
+        "8 templates—detailed 'by location' (qtys/U/M per building, e.g., Greenway Bldg A $111,900 with $3,300 for 1,650 SQ FT bituminous dampproofing on slab edges per detail 2/A07.20, $2,460 for 421 SQ FT sheet waterproofing on elevator walls, $1,330 for 222 SQ FT traffic coatings, $6,730 for 1,922 SQ FT air barriers, $98,080 for 20,865 FT joint sealants including vinyl windows).",
+        "Aggregated 'by division' (CSI totals like $70,870 sheet waterproofing without qtys).",
+        "Minimal/low-trust (descs/prices only, e.g., Hillmont $812,030 total with $10,050 for bituminous dampproofing retaining walls, $172,710 for self-adhering sheet waterproofing, $21,950 for traffic coatings, $129,930 for fluid-applied membrane air barriers, $477,390 for joint sealants).",
+        "Hybrids (location without qtys, e.g., Greenway low-trust variant with Bldg A $3,300 dampproofing).",
+        "Enki Adaptation: Upload high-trust internal version for analysis (even if low-trust sent to GC); normalize to JSON (e.g., {csi: '07 92 00', items: [{desc: 'Vinyl Windows', qty: null in low-trust}]}). Infer risks from sparsity (e.g., 'Vague qtys: Amp lead time clauses'). Waterproofing focus: Triggers for substrates, VOC/jurisdiction, staging."
+      ]
+    },
+    {
+      "name": "Contract Parsing and Segmentation",
+      "details": [
+        "Locked Source of Truth: Executed contract parsed/segmented in 1A; no re-uploads in later phases.",
+        "Hybrid Grok Models: Grok 4 for breakdown (e.g., extract essentials/risks from West End's TOC/exhibits), grok-4-1-fast-reasoning for refinements (e.g., generate exhibits from parsed JSON).",
+        "Sectional Splitting: Simple page extraction to PDFs (e.g., 'schedule.pdf' from West End page 156 Gantt); store in Supabase. Defer deep parse to phases (e.g., 1F for dependencies).",
+        "Prompt Organization: Centralized shared modules (e.g., insuranceModule) + phase-specific files (e.g., 1a-prompts.ts composing scope/comparison).",
+        "Manual Specs Upload in 1A: Optional for CSI resolution/merging (e.g., upload 03 30 00 Cast-in-Place Concrete; ref in exhibits: 'Substrate must meet 03 30 00 per manual Section 3.3 [quote: Concrete shall be cured 28 days min, flat to 1/4 inch in 10 feet]')."
+      ]
+    },
+    {
+      "name": "Schedule Handling",
+      "details": [
+        "Original as Baseline: 1A maps embedded schedule (e.g., West End Gantt tasks like 'Foundation Start' 11/15/24) to waterproofing deps (e.g., 'Sheet waterproofing +48h post-stripping for cure, risk: Wet substrates void warranty').",
+        "Updates as Present Truth: Weekly new Gantt PDFs in 1F → re-map to baseline (fast-reasoning diffs changes, e.g., 'Delayed exterior skin impacts air barriers—trigger CO exhibit')."
+      ]
+    },
+    {
+      "name": "Human Oversight Integration",
+      "details": [
+        "Baked-in from Start: Mandatory 'Review & Approve' for outputs (e.g., editable tables for parsed essentials/risks/exhibits in PhaseLayout—e.g., tweak lead time from 4 to 6 weeks). Human-in-the-loop for high-risk (e.g., insurance)."
+      ]
+    },
+    {
+      "name": "Skipped/Deferred Features",
+      "details": [
+        "Anonymization: Skipped—low risk tolerance for small firm.",
+        "Interoperability: Skipped—low portal/BIM use; minimal exports (CSV/JSON) as stretch.",
+        "Togal.ai: Skipped—pure Grok AI; not better for contract/text focus."
+      ]
+    },
+    {
+      "name": "Standards Alignment",
+      "details": [
+        "Minimal: Embed lightweight CSI/NRCA playbooks (JSON in phase-config.ts) for parsing/merging—proposal CSI priority + contract overlays + manual resolution. No deeper AIA unless value-add."
+      ]
+    },
+    {
+      "name": "Scalability Features",
+      "details": [
+        "Two Dashboards: Enki Dashboard (home/landing—project hub with access to phases/features); Dev Dashboard (internal—token usage, chat summaries/todos).",
+        "Multi-Project: Centralized view/logging in Enki dash; shared mappings/playbooks across jobs.",
+        "Token/ROI Tracking: Log in dev_logs for dev dash."
+      ]
+    },
+    {
+      "name": "AI Optimizations",
+      "details": [
+        "OCR Fallback: Tesseract for scanned Gantts/specs (integrate in ai-actions.ts if pdf-parse yields low text).",
+        "Contextual Search: Keyword/embedding search across sections (e.g., 'VOC risks' pulls from safety/insurance PDFs)—implement with Supabase or Grok fast-reasoning."
+      ]
+    },
+    {
+      "name": "Implementation Notes",
+      "details": [
+        "Latency Trade: Accept in 1A for downstream speed (pdf-lib for splits).",
+        "Edge Cases: Visual Gantts need OCR; amendments via 'append' with audits.",
+        "UI/UX: 1A progress toasts; phase buttons for 'View PDF' or 'Parse Now'; editable tables for oversight/merges.",
+        "Pure Grok AI: Hybrid (Grok 4 breakdown, fast-reasoning refinements)—no third-party like Togal."
+      ]
+    },
+    {
+      "name": "Examples from Attached Images",
+      "details": [
+        "Greenway-Gartens GMP-Rev2 by-location (Page 1 of 6): Bldg A $3,300 bituminous dampproofing (1,650 SQ FT slab edges per detail 2/A07.20), $2,460 sheet waterproofing (421 SQ FT elevator walls), $1,330 traffic coatings (222 SQ FT elevated balconies), $6,730 air barriers (1,922 SQ FT masonry/concrete walls), $98,080 joint sealants (20,865 FT including vinyl windows).",
+        "Greenway Aggregated by Division (Page 1 of 2): $18,830 bituminous dampproofing (no qtys), $70,870 sheet waterproofing, $16,940 traffic coatings, $39,480 air barriers.",
+        "Hillmont (Page 1 of 2): $812,030 total—$10,050 bituminous dampproofing retaining walls, $172,710 self-adhering sheet waterproofing, $21,950 traffic coatings, $129,930 fluid-applied membrane air barriers, $477,390 joint sealants.",
+        "West End Phase II Subcontract Cover: Clancy & Theys, subcontract #7229-013, 071000— (Page 1 of 205, schedule on 156)."
+      ]
+    }
+  ]
+}
