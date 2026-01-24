@@ -1,104 +1,104 @@
 {
   "buckets": {
     "enki-storage": {
-      "structure": "billings, closeouts, cos, invoices, jobs, pds, procurements, rfis, schedules, submittals",
+      "structure": null,
       "permissions": "Private",
       "rls_policies": [
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "User delete own phase/user path",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
+          "oid": "24189",
+          "polcmd": "d",
+          "polname": "User delete own phase/user path",
+          "polqual": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1} {SCALARARRAYOPEXPR :opno 98 :opfuncid 67 :hashfuncid 0 :negfuncid 0 :useOr true :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 1 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {ARRAYEXPR :array_typeid 1009 :array_collid 100 :element_typeid 25 :elements ({CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 8 [ 32 0 0 0 106 111 98 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 14 [ 56 0 0 0 115 117 98 109 105 116 116 97 108 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 7 [ 28 0 0 0 112 100 115 ]}) :multidims false :location -1}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 2 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {FUNCEXPR :funcid 3058 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args ({CONST :consttype 705 :consttypmod -1 :constcollid 0 :constlen -2 :constbyval false :constisnull false :location -1 :constvalue 6 [ 117 115 101 114 95 0 ]} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}) :location -1}",
+          "polrelid": "17099",
+          "polroles": [
+            "0"
           ],
-          "cmd": "DELETE",
-          "qual": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))",
-          "with_check": null
+          "polwithcheck": null,
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "User read own phase/user path",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
+          "oid": "24191",
+          "polcmd": "r",
+          "polname": "User read own phase/user path",
+          "polqual": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1} {SCALARARRAYOPEXPR :opno 98 :opfuncid 67 :hashfuncid 0 :negfuncid 0 :useOr true :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 1 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {ARRAYEXPR :array_typeid 1009 :array_collid 100 :element_typeid 25 :elements ({CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 8 [ 32 0 0 0 106 111 98 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 14 [ 56 0 0 0 115 117 98 109 105 116 116 97 108 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 7 [ 28 0 0 0 112 100 115 ]}) :multidims false :location -1}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 2 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {FUNCEXPR :funcid 3058 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args ({CONST :consttype 705 :consttypmod -1 :constcollid 0 :constlen -2 :constbyval false :constisnull false :location -1 :constvalue 6 [ 117 115 101 114 95 0 ]} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}) :location -1}",
+          "polrelid": "17099",
+          "polroles": [
+            "0"
           ],
-          "cmd": "SELECT",
-          "qual": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))",
-          "with_check": null
+          "polwithcheck": null,
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "User update own phase/user path",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
+          "oid": "24192",
+          "polcmd": "w",
+          "polname": "User update own phase/user path",
+          "polqual": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1} {SCALARARRAYOPEXPR :opno 98 :opfuncid 67 :hashfuncid 0 :negfuncid 0 :useOr true :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 1 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {ARRAYEXPR :array_typeid 1009 :array_collid 100 :element_typeid 25 :elements ({CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 8 [ 32 0 0 0 106 111 98 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 14 [ 56 0 0 0 115 117 98 109 105 116 116 97 108 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 7 [ 28 0 0 0 112 100 115 ]}) :multidims false :location -1}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 2 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {FUNCEXPR :funcid 3058 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args ({CONST :consttype 705 :consttypmod -1 :constcollid 0 :constlen -2 :constbyval false :constisnull false :location -1 :constvalue 6 [ 117 115 101 114 95 0 ]} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}) :location -1}",
+          "polrelid": "17099",
+          "polroles": [
+            "0"
           ],
-          "cmd": "UPDATE",
-          "qual": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))",
-          "with_check": null
+          "polwithcheck": null,
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "User upload to own phase/user path",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
+          "oid": "24202",
+          "polcmd": "a",
+          "polname": "User upload to own phase/user path",
+          "polqual": null,
+          "polrelid": "17099",
+          "polroles": [
+            "0"
           ],
-          "cmd": "INSERT",
-          "qual": null,
-          "with_check": "((bucket_id = 'enki-storage'::text) AND (auth.role() = 'authenticated'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text, 'phase1a'::text, 'phase1b'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))"
+          "polwithcheck": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1} {SCALARARRAYOPEXPR :opno 98 :opfuncid 67 :hashfuncid 0 :negfuncid 0 :useOr true :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 1 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {ARRAYEXPR :array_typeid 1009 :array_collid 100 :element_typeid 25 :elements ({CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 8 [ 32 0 0 0 106 111 98 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 14 [ 56 0 0 0 115 117 98 109 105 116 116 97 108 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 7 [ 28 0 0 0 112 100 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 11 [ 44 0 0 0 112 104 97 115 101 49 97 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 11 [ 44 0 0 0 112 104 97 115 101 49 98 ]}) :multidims false :location -1}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 2 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {FUNCEXPR :funcid 3058 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args ({CONST :consttype 705 :consttypmod -1 :constcollid 0 :constlen -2 :constbyval false :constisnull false :location -1 :constvalue 6 [ 117 115 101 114 95 0 ]} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}) :location -1}",
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "Allow select for owners",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
+          "oid": "24255",
+          "polcmd": "r",
+          "polname": "Allow select for owners",
+          "polqual": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 4 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 4 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1} {NULLTEST :arg {OPEXPR :opno 3477 :opfuncid 3214 :opresulttype 25 :opretset false :opcollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 8 :vartype 3802 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 8 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 14 [ 56 0 0 0 100 101 108 101 116 101 100 95 97 116 ]}) :location -1} :nulltesttype 0 :argisrow false :location -1}) :location -1}",
+          "polrelid": "17099",
+          "polroles": [
+            "16481"
           ],
-          "cmd": "SELECT",
-          "qual": "((bucket_id = 'enki-storage'::text) AND (owner = auth.uid()) AND ((metadata ->> 'deleted_at'::text) IS NULL))",
-          "with_check": null
+          "polwithcheck": null,
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "Allow update for owners",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
+          "oid": "24256",
+          "polcmd": "w",
+          "polname": "Allow update for owners",
+          "polqual": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 4 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 4 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}",
+          "polrelid": "17099",
+          "polroles": [
+            "16481"
           ],
-          "cmd": "UPDATE",
-          "qual": "((bucket_id = 'enki-storage'::text) AND (owner = auth.uid()))",
-          "with_check": null
+          "polwithcheck": null,
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "Allow delete for owners",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
+          "oid": "24257",
+          "polcmd": "d",
+          "polname": "Allow delete for owners",
+          "polqual": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 4 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 4 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}",
+          "polrelid": "17099",
+          "polroles": [
+            "16481"
           ],
-          "cmd": "DELETE",
-          "qual": "((bucket_id = 'enki-storage'::text) AND (owner = auth.uid()))",
-          "with_check": null
+          "polwithcheck": null,
+          "polpermissive": true
         },
         {
-          "schemaname": "storage",
-          "tablename": "objects",
-          "policyname": "Allow insert for authenticated users in allowed folders",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
+          "oid": "24258",
+          "polcmd": "a",
+          "polname": "Allow insert for authenticated users in allowed folders",
+          "polqual": null,
+          "polrelid": "17099",
+          "polroles": [
+            "16481"
           ],
-          "cmd": "INSERT",
-          "qual": null,
-          "with_check": "((bucket_id = 'enki-storage'::text) AND ((storage.foldername(name))[1] = ANY (ARRAY['jobs'::text, 'submittals'::text, 'pds'::text, 'rfis'::text, 'schedules'::text, 'cos'::text, 'procurements'::text, 'invoices'::text, 'billings'::text, 'closeouts'::text])) AND ((storage.foldername(name))[2] = concat('user_', auth.uid())))"
+          "polwithcheck": "{BOOLEXPR :boolop and :args ({OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({VAR :varno 1 :varattno 2 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 101 110 107 105 45 115 116 111 114 97 103 101 ]}) :location -1} {SCALARARRAYOPEXPR :opno 98 :opfuncid 67 :hashfuncid 0 :negfuncid 0 :useOr true :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 1 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {ARRAYEXPR :array_typeid 1009 :array_collid 100 :element_typeid 25 :elements ({CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 8 [ 32 0 0 0 106 111 98 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 14 [ 56 0 0 0 115 117 98 109 105 116 116 97 108 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 7 [ 28 0 0 0 112 100 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 8 [ 32 0 0 0 114 102 105 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 13 [ 52 0 0 0 115 99 104 101 100 117 108 101 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 7 [ 28 0 0 0 99 111 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 16 [ 64 0 0 0 112 114 111 99 117 114 101 109 101 110 116 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 12 [ 48 0 0 0 105 110 118 111 105 99 101 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 12 [ 48 0 0 0 98 105 108 108 105 110 103 115 ]} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 13 [ 52 0 0 0 99 108 111 115 101 111 117 116 115 ]}) :multidims false :location -1}) :location -1} {OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({SUBSCRIPTINGREF :refcontainertype 1009 :refelemtype 25 :refrestype 25 :reftypmod -1 :refcollid 100 :refupperindexpr ({CONST :consttype 23 :consttypmod -1 :constcollid 0 :constlen 4 :constbyval true :constisnull false :location -1 :constvalue 4 [ 2 0 0 0 0 0 0 0 ]}) :reflowerindexpr <> :refexpr {FUNCEXPR :funcid 17117 :funcresulttype 1009 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 100 :args ({VAR :varno 1 :varattno 3 :vartype 25 :vartypmod -1 :varcollid 100 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 3 :location -1}) :location -1} :refassgnexpr <>} {FUNCEXPR :funcid 3058 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args ({CONST :consttype 705 :consttypmod -1 :constcollid 0 :constlen -2 :constbyval false :constisnull false :location -1 :constvalue 6 [ 117 115 101 114 95 0 ]} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}) :location -1}) :location -1}",
+          "polpermissive": true
         }
       ]
     }
@@ -106,186 +106,175 @@
   "tables": {
     "jobs": {
       "columns": [
-        "id: uuid",
-        "owner_id: uuid",
-        "project_name: text",
-        "gc_contact: jsonb",
-        "scope_summary: text",
-        "essentials: jsonb",
-        "to_do_items: jsonb",
-        "product_matches: jsonb",
-        "rfis: jsonb",
-        "submittals: jsonb",
-        "schedules: jsonb",
-        "cos: jsonb",
-        "procurements: jsonb",
-        "invoices: jsonb",
-        "billings: jsonb",
-        "closeouts: jsonb",
-        "created_at: timestamp with time zone",
-        "updated_at: timestamp with time zone",
-        "contract_number: text",
-        "contract_amount: numeric",
-        "scope_of_work: text"
+        "id",
+        "user_id",
+        "job_id",
+        "contract_number",
+        "project_name",
+        "constructor_name",
+        "project_address",
+        "date",
+        "status",
+        "created_at",
+        "updated_at",
+        "storage_path"
       ],
       "rls_policies": [
         {
-          "schemaname": "public",
-          "tablename": "jobs",
-          "policyname": "Enable read access for owners",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
-          ],
-          "cmd": "SELECT",
-          "qual": "(owner_id = auth.uid())",
-          "with_check": null
-        },
-        {
-          "schemaname": "public",
-          "tablename": "jobs",
-          "policyname": "Enable insert for authenticated",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
-          ],
-          "cmd": "INSERT",
+          "cmd": "a",
           "qual": null,
-          "with_check": "(auth.role() = 'authenticated'::text)"
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
+          "policyname": "User insert own jobs",
+          "with_check": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}"
         },
         {
-          "schemaname": "public",
-          "tablename": "jobs",
-          "policyname": "Enable update for owners",
-          "permissive": "PERMISSIVE",
+          "cmd": "r",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}",
           "roles": [
-            "public"
+            "16481"
           ],
-          "cmd": "UPDATE",
-          "qual": "(owner_id = auth.uid())",
+          "permissive": true,
+          "policyname": "User read own jobs",
           "with_check": null
+        },
+        {
+          "cmd": "w",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}",
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
+          "policyname": "User update own jobs",
+          "with_check": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}"
+        },
+        {
+          "cmd": "d",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}",
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
+          "policyname": "User delete own jobs",
+          "with_check": null
+        },
+        {
+          "cmd": "*",
+          "qual": "{CONST :consttype 16 :consttypmod -1 :constcollid 0 :constlen 1 :constbyval true :constisnull false :location -1 :constvalue 1 [ 1 0 0 0 0 0 0 0 ]}",
+          "roles": [
+            "16482"
+          ],
+          "permissive": true,
+          "policyname": "Admin full access",
+          "with_check": "{CONST :consttype 16 :consttypmod -1 :constcollid 0 :constlen 1 :constbyval true :constisnull false :location -1 :constvalue 1 [ 1 0 0 0 0 0 0 0 ]}"
         }
       ]
     },
     "products": {
       "columns": [
-        "id: uuid",
-        "manufacturer: text",
-        "name: text",
-        "voc_level: numeric",
-        "compatibility: jsonb"
+        "id",
+        "manufacturer",
+        "name",
+        "voc_level",
+        "compatibility"
       ],
       "rls_policies": [
         {
-          "schemaname": "public",
-          "tablename": "products",
-          "policyname": "Enable insert for authenticated",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "public"
-          ],
-          "cmd": "INSERT",
+          "cmd": "a",
           "qual": null,
-          "with_check": "(auth.role() = 'authenticated'::text)"
+          "roles": [
+            "0"
+          ],
+          "permissive": true,
+          "policyname": "Enable insert for authenticated",
+          "with_check": "{OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1}"
         },
         {
-          "schemaname": "public",
-          "tablename": "products",
-          "policyname": "Enable read access for all authenticated",
-          "permissive": "PERMISSIVE",
+          "cmd": "r",
+          "qual": "{OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1}",
           "roles": [
-            "public"
+            "0"
           ],
-          "cmd": "SELECT",
-          "qual": "(auth.role() = 'authenticated'::text)",
+          "permissive": true,
+          "policyname": "Enable read access for all authenticated",
           "with_check": null
         },
         {
-          "schemaname": "public",
-          "tablename": "products",
-          "policyname": "Enable update for authenticated",
-          "permissive": "PERMISSIVE",
+          "cmd": "w",
+          "qual": "{OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1}",
           "roles": [
-            "public"
+            "0"
           ],
-          "cmd": "UPDATE",
-          "qual": "(auth.role() = 'authenticated'::text)",
+          "permissive": true,
+          "policyname": "Enable update for authenticated",
           "with_check": null
         }
       ]
     },
     "dev_logs": {
       "columns": [
-        "id: uuid",
-        "user_id: uuid",
-        "summaries: jsonb",
-        "created_at: timestamp with time zone",
-        "updated_at: timestamp with time zone"
+        "id",
+        "user_id",
+        "summaries",
+        "created_at",
+        "updated_at"
       ],
       "rls_policies": [
         {
-          "schemaname": "public",
-          "tablename": "dev_logs",
-          "policyname": "Allow insert for own logs",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
-          ],
-          "cmd": "INSERT",
+          "cmd": "a",
           "qual": null,
-          "with_check": "(user_id = auth.uid())"
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
+          "policyname": "Allow insert for own logs",
+          "with_check": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}"
         },
         {
-          "schemaname": "public",
-          "tablename": "dev_logs",
+          "cmd": "r",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}",
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
           "policyname": "Allow select for own logs",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
-          ],
-          "cmd": "SELECT",
-          "qual": "(user_id = auth.uid())",
           "with_check": null
         },
         {
-          "schemaname": "public",
-          "tablename": "dev_logs",
+          "cmd": "w",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}",
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
           "policyname": "Allow update for own logs",
-          "permissive": "PERMISSIVE",
-          "roles": [
-            "authenticated"
-          ],
-          "cmd": "UPDATE",
-          "qual": "(user_id = auth.uid())",
-          "with_check": "(user_id = auth.uid())"
+          "with_check": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}"
         },
         {
-          "schemaname": "public",
-          "tablename": "dev_logs",
-          "policyname": "Allow delete for own logs",
-          "permissive": "PERMISSIVE",
+          "cmd": "d",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({VAR :varno 1 :varattno 2 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 2 :location -1} {FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1}) :location -1}",
           "roles": [
-            "authenticated"
+            "16481"
           ],
-          "cmd": "DELETE",
-          "qual": "(user_id = auth.uid())",
+          "permissive": true,
+          "policyname": "Allow delete for own logs",
           "with_check": null
         },
         {
-          "schemaname": "public",
-          "tablename": "dev_logs",
-          "policyname": "Admin full access",
-          "permissive": "PERMISSIVE",
+          "cmd": "*",
+          "qual": "{CONST :consttype 16 :consttypmod -1 :constcollid 0 :constlen 1 :constbyval true :constisnull false :location -1 :constvalue 1 [ 1 0 0 0 0 0 0 0 ]}",
           "roles": [
-            "service_role"
+            "16482"
           ],
-          "cmd": "ALL",
-          "qual": "true",
-          "with_check": "true"
+          "permissive": true,
+          "policyname": "Admin full access",
+          "with_check": "{CONST :consttype 16 :consttypmod -1 :constcollid 0 :constlen 1 :constbyval true :constisnull false :location -1 :constvalue 1 [ 1 0 0 0 0 0 0 0 ]}"
         }
       ]
     }
   },
-  "last_updated": "2026-01-19T22:50:26.368Z",
+  "last_updated": "2026-01-24T19:01:33.835Z",
   "changes": []
 }

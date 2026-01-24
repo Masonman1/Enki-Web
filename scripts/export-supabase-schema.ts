@@ -1,4 +1,6 @@
-// scripts/export-supabase-schema.ts (Node.js script for Supabase schema export; run with: npx ts-node scripts/export-supabase-schema.ts)
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -27,14 +29,14 @@ async function fetchTables(): Promise<string[]> {
   return data as string[];
 }
 
-async function fetchColumns(table: string): Promise<Record<string, unknown>[]> {
-  const { data, error } = await supabase.rpc('get_columns', { tablename: table });
+async function fetchColumns(table: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc('get_columns_for_table', { table_name: table });  // Corrected name and param
   if (error) throw error;
-  return data as Record<string, unknown>[];
+  return data as string[];
 }
 
 async function fetchRlsPolicies(table: string): Promise<Record<string, unknown>[]> {
-  const { data, error } = await supabase.rpc('get_rls_policies', { tablename: table });
+  const { data, error } = await supabase.rpc('get_rls_policies_for_table', { table_name: table });  // Corrected name and param
   if (error) throw error;
   return data as Record<string, unknown>[];
 }
