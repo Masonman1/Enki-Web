@@ -1,0 +1,57 @@
+﻿job_drafts,,"(Temporary table for Phase 1A parses; JSON-flexible to handle provisional data from AI prompts like composeEssentialsPrompt, with looser constraints for review in Phase 1B)"
+,id,"uuid (primary key, auto-generated)"
+,user_id,"uuid (foreign key to auth.users; for RLS, ensuring user-owned drafts)"
+,draft_json,"jsonb (core parsed essentials; e.g., {contract_number: ""SR-039"", contract_amount: 812030.00, project_name: ""Hillmont Project"", addresses: {constructor: ""..."", ...}, scope_of_work: ""Narrative text..."", scope_details: [{area: ""Bldg A"", qty: 1650, ...}], assets: [""path/to/image.png""], ...} – absorbs variability like optional lead_time_flags or voc_compliance without schema changes)"
+,risks,"text[] (flattened array from flattenRisks; e.g., [""Risk: No substrate spec"", ""Risk: Lead time not specified""])"
+,splits,"jsonb (section ranges; e.g., {schedule: ""156-160"", insurance: ""45-52""})"
+,storage_path,"text (temp bucket path; e.g., 'drafts/user_{userId}/{draft_id}' for split PDFs/images)"
+,created_at,timestamptz (default now())
+,status,text (default 'pending'; evolves to 'in_review' during Phase 1B edits)
+jobs,,"(Main committed table post-Phase 1B review; relational for structured queries in downstream phases like 1G change orders or 1H procurement, with finite columns and placeholders for optionals to minimize NULLs)"
+,id,uuid (primary key)
+,user_id ,uuid (foreign key for RLS)
+,contract_number,varchar (required; unique with user_id; indexed for lookups)
+,contract_amount,numeric (required; for calcs like retainage in 1J or deltas in 1G)
+,constructor_name,"varchar (optional; placeholder e.g., 'N/A - Not Specified')"
+,constructor_address,"varchar (optional; placeholder e.g., 'TBD - Confirm with GC')"
+,constructor_phone,
+,project_name,varchar (required; indexed for searches/dashboard filters)
+,project_address,"varchar (optional; placeholder e.g., 'N/A - Site Location Pending')"
+,owner_name,"varchar (optional; placeholder e.g., 'N/A - Per GC Contract')"
+,owner_address,"varchar (optional; placeholder e.g., 'TBD - Request from Owner')"
+,architect_name,"varchar (optional; placeholder e.g., 'N/A - No Architect Involved')"
+,architect_address,"varchar (optional; placeholder e.g., 'TBD - Design Coord via GC')"
+,project_manager_name,
+,project_manager_cell,
+,project_manager_email,
+,superintendent_name,
+,superintendent_cell,
+,superintendent_email,
+,accounts_payable_name,
+,accounts_payable_email,
+,safety_representative_name,
+,safety_representative_email,
+,scope_of_work,"text (required; full-text indexed for waterproofing searches like ""membrane"" or ""slab edges"")"
+,scope_details_json,"jsonb (optional structured extras; e.g., [{area: ""Bldg A"", type: ""bituminous dampproofing"", qty: 1650, unit: ""SQ FT""}]; for qtys in procurement forecasts)"
+,risks,text[] (flattened/updated array; appended during lifecycle if new risks emerge)
+,storage_path,"text (permanent path; e.g., 'jobs/{project_name}/{contract_number}' – updated on commit from temp)"
+,committed_at,timestamptz (set on insert from Phase 1B)
+contacts,,(Normalized table for all entities including subcontractor/GC/architect/owner/vendor; reusable across jobs with dynamics like PM handoffs)
+,id, uuid (primary key)
+,user_id, uuid (for RLS; user-owned)
+,name," varchar (required; e.g., 'BB Caulk Inc.' for self_company, or 'John Doe' for constructor_pm)"
+,address," varchar (optional; placeholder e.g., 'N/A - Not Required')"
+,email," varchar (optional; unique where applicable; placeholder e.g., 'TBD - Assign Contact')"
+,phone," varchar (optional; placeholder e.g., 'N/A - Use Email')"
+,role/type," varchar (required; e.g., 'self_company', 'self_pm', 'self_super', 'constructor_pm', 'architect', 'vendor' – enum-like for filtering waterproofing coords)"
+,specialty," varchar (optional; e.g., 'Substrate Expert' or 'Material Supplier'; for AI-assisted routing)"
+,risk_flags," text[] (optional; e.g., ['Frequent Lead Time Delays']; AI-populated for assists)"
+,notes," text (optional; e.g., 'Handling sequencing for elevator walls')"
+,updated_at, timestamptz (for tracking changes like handoffs)
+,is_active, boolean (default true; for soft-deletes)
+job_contacts,,(Junction table for M:M linkages with history; supports per-job dynamics like subcontractor PM handoffs mid-project)
+,job_id, uuid (foreign key to jobs.id)
+,contact_id, uuid (foreign key to contacts.id)
+,active_from, timestamptz (default now(); for handoff timestamps)
+,active_to, timestamptz (null; set on handoff/update)
+,notes," text (optional; e.g., 'Handoff due to project transition – Review pending risks')"

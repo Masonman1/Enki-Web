@@ -5,11 +5,24 @@ import OpenAI from 'openai';
 import pdf from 'pdf-parse'; // For initial text scan in section detection (no storage)
 import { createClient } from '@supabase/supabase-js'; // For storing split PDFs
 import { PDFDocument } from 'pdf-lib'; // For splitting PDFs by page ranges
+import { v4 as uuidv4 } from 'uuid'; // Added for fallback UUID in paths
 
 // Import phase-specific prompts (new modular structure)
 import { composeEssentialsPrompt } from '@/lib/prompts/phase1a/essentials'; // Renamed from base
 import { composeSplitPrompt } from '@/lib/prompts/phase1a/split-prompts'; // New for section ID
 import { composeRiskPrompt, flattenRisks } from '@/lib/prompts/phase1a/risk-prompts'; // For risks post-split
+
+// Extended interfaces
+interface ParsedSplit {
+  [section: string]: string; // e.g., { "schedule": "156-160", "insurance": "45-52" }
+}
+
+interface ParsedJob extends ParsedContract {
+  splits: ParsedSplit;
+  risks: string[]; // Flattened as before
+  storage_path: string | null; // Dynamic path, e.g., 'jobs/Hillmont_Project/SR-039'
+  error_msg?: string; // NEW: Optional for per-job errors
+}
 
 // Define interfaces for structured parsing (unchanged + new for splits)
 interface ParsedContract {
@@ -27,155 +40,67 @@ interface ParsedContract {
   risks: string[];
 }
 
-interface SectionRanges {
-  [section: string]: string; // e.g., { 'schedule': '156-160', 'insurance': '45-52' }
-}
-
-// Initialize Grok client server-side (unchanged)
-console.log('GROK_API_KEY check:', process.env.GROK_API_KEY ? 'Set (length: ' + process.env.GROK_API_KEY.length + ')' : 'Missing!');
-const grok = new OpenAI({
-  apiKey: process.env.GROK_API_KEY,
-  baseURL: 'https://api.x.ai/v1',
-});
-
-if (!process.env.GROK_API_KEY) {
-  throw new Error('GROK_API_KEY missing from .env.local');
-}
-
-// Supabase client for storing splits (use service key for server actions)
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
-
-export async function parseFilesAction(fileUrls: string[], subphase?: string, userId?: string) {
-  const results: (ParsedContract | { splits: string[] })[] = []; // Flexible return for subphases
-
-  // Dynamic prompt composer based on subphase
-  let promptComposer;
-  let model = 'grok-4'; // Default to heavy for splitting/inference
-  if (subphase === 'split') {
-    promptComposer = composeSplitPrompt;
-  } else if (subphase === 'essentials') {
-    promptComposer = composeEssentialsPrompt;
-    model = 'grok-4-1-fast-non-reasoning'; // Switch to fast for lighter tasks
-  } else if (subphase === 'risks') {
-    promptComposer = composeRiskPrompt;
-    model = 'grok-4-1-fast-non-reasoning';
-  } else {
-    throw new Error('Invalid subphase');
-  }
+// Update function signature
+export async function parseFilesAction(
+  fileUrls: string[], 
+  subphase: 'essentials' | 'split' | 'risks' = 'essentials', // Default to chained start
+  userId: string, // NEW: Required for auth/RLS (from session.user.id)
+  storagePath?: string | null // NEW: Optional for chained calls (pass from prior ParsedJob)
+): Promise<ParsedJob[]> { // NEW: Return array of ParsedJob for multi-file
+  const results: ParsedJob[] = [];
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const openai = new OpenAI({ 
+    apiKey: process.env.GROK_API_KEY,
+    baseURL: 'https://api.x.ai/v1/' // xAI base URL for Grok API compatibility
+  });
 
   for (const url of fileUrls) {
     try {
-      // Fetch PDF buffer
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Fetch error: ${response.status}`);
-      const buffer = await response.arrayBuffer();
+      // Download file from signed/temp URL (assumes url is full signed URL; extract path for download)
+      const filePath = new URL(url).pathname.split('/enki-storage/')[1]; // Extract path after bucket
+      const { data: fileBlob, error: downloadError } = await supabase.storage
+        .from('enki-storage')
+        .download(filePath);
 
-      if (subphase === 'split') {
-        // Hybrid: Grok 4 for section detection (scan text to get ranges, no storage)
-        const pdfData = await pdf(buffer);
-        const text = pdfData.text; // Full text scan for headings (lightweight)
+      if (downloadError || !fileBlob) {
+        throw new Error(`File download failed: ${downloadError?.message ?? 'No buffer'}`);
+      }
 
-        // NEW: Aggressive chunking to stay under 256k limit (aim for 128k per chunk max, tighter ratio)
-        const maxTokens = 128000; // Halved for safety buffer
-        const avgTokenPerChar = 0.25; // Adjust to 4 chars/token for conservatism
-        const maxChars = Math.floor(maxTokens / avgTokenPerChar);
-        const chunks: string[] = [];
-        for (let i = 0; i < text.length; i += maxChars) {
-          chunks.push(text.slice(i, i + maxChars));
-        }
+      // Convert Blob to Buffer for pdf-parse and pdf-lib
+      const fileBuffer = Buffer.from(await fileBlob.arrayBuffer());
 
-        console.log('Chunk count for large PDF:', chunks.length); // Debug: Check if chunking applied
+      // Extract full text for prompts (shared across subphases)
+      const pdfData = await pdf(fileBuffer);
+      let text = pdfData.text;
 
-        const sectionRanges: SectionRanges = {};
+      // Truncate text to avoid token limits (Grok-4 max ~256k tokens; ~0.75 chars/token → safe 200k chars)
+      const MAX_CHARS = 200000; // Adjust based on model limits; solution from prior iteration
+      if (text.length > MAX_CHARS) {
+        text = text.slice(0, MAX_CHARS) + '... [truncated for prompt length]';
+      }
 
-        // Process chunks sequentially with Grok 4
-        for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
-          const chunkText = chunks[chunkIndex];
-          console.log('Processing chunk', chunkIndex + 1, 'length:', chunkText.length); // Debug token estimate
-
-          const completion = await grok.chat.completions.create({
-            messages: [{ role: 'user', content: promptComposer(chunkText) }],
-            model, // Grok 4 heavy
-            temperature: 0.3,
-            max_tokens: 1024,
-          });
-
-          const rawContent = completion.choices[0]?.message?.content || '';
-          const cleanedContent = rawContent.trim().replace(/```json|```/g, ''); // Clean
-
-          const chunkRanges: SectionRanges = JSON.parse(cleanedContent);
-
-          // Adjust ranges for chunk offset (estimate page offset based on chunk size; refine if needed)
-          const approxPagesPerChunk = pdfData.numpages / chunks.length;
-          const offset = chunkIndex * approxPagesPerChunk;
-          for (const [section, range] of Object.entries(chunkRanges)) {
-            const [start, end] = range.split('-').map(Number);
-            const adjustedStart = Math.round(start + offset);
-            const adjustedEnd = Math.round(end + offset);
-            sectionRanges[section] = `${adjustedStart}-${adjustedEnd}`;
-          }
-        }
-
-        // Use pdf-lib to split based on ranges
-        const originalPdf = await PDFDocument.load(buffer);
-        const splitUrls: string[] = [];
-
-        for (const [section, range] of Object.entries(sectionRanges)) {
-          const [start, end] = range.split('-').map(Number);
-          const subPdf = await PDFDocument.create();
-
-          const pages = await subPdf.copyPages(originalPdf, Array.from({ length: end - start + 1 }, (_, i) => start + i - 1));
-          pages.forEach(page => subPdf.addPage(page));
-
-          const subPdfBytes = await subPdf.save();
-
-          // Store in Supabase (e.g., jobs/user_<uid>/sections/section-name.pdf)
-          const path = `jobs/user_${userId}/sections/${section}.pdf`;
-          const { error } = await supabase.storage.from('enki-storage').upload(path, subPdfBytes, { contentType: 'application/pdf' });
-          if (error) throw error;
-
-          const { data: { publicUrl } } = supabase.storage.from('enki-storage').getPublicUrl(path);
-          splitUrls.push(publicUrl); // Return URLs for review/one-click
-        }
-
-        results.push({ splits: splitUrls });
-
+      // ... then proceed to prompt = compose... based on subphase
+      let prompt: string;
+      if (subphase === 'essentials') {
+        prompt = composeEssentialsPrompt(text);
+      } else if (subphase === 'split') {
+        prompt = composeSplitPrompt(text);
+      } else if (subphase === 'risks') {
+        prompt = composeRiskPrompt(text);
       } else {
-        // Other subphases (essentials/risks) - revert to text-based parse with fast model
-        let text = '';
-        const pagesText: string[] = []; // Collect per-page
+        throw new Error('Invalid subphase');
+      }
 
-        const options: pdf.Options = {
-          pagerender: async (pageData) => {
-            const renderContext = {
-              canvasContext: { fillText: () => {} }, // Mock
-              viewport: pageData.getViewport({ scale: 1 }),
-            };
-            const textContent = await pageData.getTextContent(renderContext);
-            const pageText = textContent.items.map((item: { str: string }) => item.str).join(' '); // FIXED: Type item as { str: string } to avoid any
-            pagesText.push(pageText);
-            return pageText;
-          },
-        };
+      const completion = await openai.chat.completions.create({
+        model: 'grok-4', // UPDATED: Use Grok 4 model (deprecated 'grok-beta' replaced)
+        messages: [{ role: 'user', content: prompt }],
+      });
 
-        const pdfData = await pdf(buffer, options);
-        await Promise.all(pagesText.map(p => p)); // Wait async
+      const rawParsed = JSON.parse(completion.choices[0].message.content!);
 
-        text = pdfData.text; // Full for essentials/risks (or filter by ranges if provided)
-
-        const completion = await grok.chat.completions.create({
-          messages: [{ role: 'user', content: promptComposer(text) }],
-          model, // Fast for lighter
-          temperature: 0.3,
-          max_tokens: 4096,
-        });
-
-        const rawContent = completion.choices[0]?.message?.content || '';
-        const cleanedContent = rawContent.trim().replace(/```json|```/g, '');
-
-        const rawParsed: Record<string, unknown> = JSON.parse(cleanedContent);
-
-        const parsed: ParsedContract = {
+      let parsed: ParsedJob;
+      if (subphase === 'essentials') {
+        parsed = {
           contract_number: rawParsed?.contract_number ?? null,
           contract_amount: rawParsed?.contract_amount ?? null,
           constructor_name: rawParsed?.constructor_name ?? null,
@@ -188,21 +113,243 @@ export async function parseFilesAction(fileUrls: string[], subphase?: string, us
           architect_address: rawParsed?.architect_address ?? null,
           scope_of_work: rawParsed?.scope_of_work ?? null,
           risks: flattenRisks(rawParsed),
+          splits: {}, // Placeholder
+          storage_path: null // Placeholder
         };
+      } else if (subphase === 'split') {
+        parsed = {
+          // Fallback essentials
+          contract_number: null,
+          contract_amount: null,
+          constructor_name: null,
+          constructor_address: null,
+          project_name: null,
+          project_address: null,
+          owner_name: null,
+          owner_address: null,
+          architect_name: null,
+          architect_address: null,
+          scope_of_work: null,
+          risks: [],
+          splits: rawParsed ?? {}, // Assuming rawParsed is { section: 'start-end' }
+          storage_path: null
+        };
+      } else {
+        parsed = {
+          // Fallback essentials
+          contract_number: null,
+          contract_amount: null,
+          constructor_name: null,
+          constructor_address: null,
+          project_name: null,
+          project_address: null,
+          owner_name: null,
+          owner_address: null,
+          architect_name: null,
+          architect_address: null,
+          scope_of_work: null,
+          risks: flattenRisks(rawParsed),
+          splits: {},
+          storage_path: null
+        };
+      }
 
-        // Handle "Null" as null
-        for (const key in parsed) {
-          if (parsed[key as keyof ParsedContract] === "Null") {
-            parsed[key as keyof ParsedContract] = null;
+      // Handle "Null" as null
+      for (const key in parsed) {
+        if (parsed[key as keyof ParsedJob] === "Null") {
+          parsed[key as keyof ParsedJob] = null;
+        }
+      }
+
+      // Helper: Sanitize for storage paths
+      function sanitizeForPath(str: string | null): string {
+        if (!str) return 'unknown';
+        return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 50); // Safe, truncated
+      }
+
+      if (subphase === 'essentials') {
+        try {
+          // Insert into jobs table
+          const { data: job, error: insertError } = await supabase
+            .from('jobs')
+            .insert({
+              user_id: userId,
+              contract_number: parsed.contract_number,
+              contract_amount: parsed.contract_amount,
+              constructor_name: parsed.constructor_name,
+              constructor_address: parsed.constructor_address,
+              project_name: parsed.project_name,
+              project_address: parsed.project_address,
+              owner_name: parsed.owner_name,
+              owner_address: parsed.owner_address,
+              architect_name: parsed.architect_name,
+              architect_address: parsed.architect_address,
+              scope_of_work: parsed.scope_of_work,
+              risks: parsed.risks // Array
+            })
+            .select()
+            .single();
+
+          if (insertError || !job) {
+            throw new Error(`Job insert failed: ${insertError?.message}`);
+          }
+
+          // Generate dynamic path
+          const projSlug = sanitizeForPath(parsed.project_name);
+          const numSlug = sanitizeForPath(parsed.contract_number) || uuidv4().slice(0, 8); // Fallback UUID snippet
+          const storagePathLocal = `jobs/${projSlug}/${numSlug}`; // Renamed to avoid conflict
+
+          // Update job with storage_path
+          const { error: updateError } = await supabase
+            .from('jobs')
+            .update({ storage_path: storagePathLocal })
+            .eq('id', job.id);
+
+          if (updateError) {
+            throw new Error(`Path update failed: ${updateError.message}`);
+          }
+          parsed.storage_path = storagePathLocal;
+        } catch (insertErr: any) {
+          console.error(`Essentials insert error: ${insertErr.message}`);
+          parsed.storage_path = `jobs/fallback/${uuidv4().slice(0, 8)}`;
+          parsed.error_msg = `Job insert failed: ${insertErr.message}; using fallback path`;
+        }
+      }
+
+      // For 'split' or 'risks', use storagePath if provided
+      if (subphase === 'split' || subphase === 'risks') {
+        parsed.storage_path = storagePath ?? parsed.storage_path;
+      }
+
+      // After parsing 'parsed' and essentials insert...
+      if (subphase === 'split') {
+        if (!parsed.storage_path) {
+          // In chained calls, this would come from prior essentials; fallback for standalone
+          console.warn('No storage_path; using temp');
+          parsed.storage_path = `temp_splits/${uuidv4()}`;
+        }
+
+        const originalPdf = await PDFDocument.load(fileBuffer); // Reuse downloaded buffer
+        const splitUrls: Record<string, string> = {}; // For optional return in splits
+
+        for (const [section, range] of Object.entries(parsed.splits)) {
+          try {
+            const [start, end] = range.split('-').map(Number);
+            if (isNaN(start) || isNaN(end) || start > end) continue; // Skip invalid
+
+            const splitDoc = await PDFDocument.create();
+            const copiedPages = await splitDoc.copyPages(originalPdf, Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i));
+            copiedPages.forEach((page) => splitDoc.addPage(page));
+
+            const splitBuffer = await splitDoc.save();
+
+            const splitPath = `${parsed.storage_path}/splits/${sanitizeForPath(section)}.pdf`;
+            const { error: uploadError } = await supabase.storage
+              .from('enki-storage')
+              .upload(splitPath, splitBuffer, { contentType: 'application/pdf' });
+
+            if (uploadError) {
+              throw new Error(`Split upload failed for ${section}: ${uploadError.message}`);
+            }
+
+            // Optional: Get signed URL for risks phase
+            const { data: signedData } = await supabase.storage
+              .from('enki-storage')
+              .createSignedUrl(splitPath, 3600); // 1hr expiry
+            if (signedData?.signedUrl) splitUrls[section] = signedData.signedUrl;
+          } catch (splitErr: any) {
+            console.error(`Split error for ${section}: ${splitErr.message}`);
+            // Continue to next section
           }
         }
 
-        results.push(parsed);
+        // Optionally attach URLs to parsed (for chain)
+        // parsed.split_urls = splitUrls; // If adding to interface
       }
 
-    } catch (error) {
+      // After 'split' block...
+      if (subphase === 'risks') {
+        if (!parsed.storage_path) {
+          throw new Error('No storage_path for risks');
+        }
+
+        // Assume splits from prior; list files in storage_path/splits/
+        const { data: splitFiles, error: listError } = await supabase.storage
+          .from('enki-storage')
+          .list(`${parsed.storage_path}/splits`);
+
+        if (listError || !splitFiles?.length) {
+          console.warn('No splits; falling back to full text risks');
+          // Run on full text
+          const riskPrompt = composeRiskPrompt(text);
+          const completion = await openai.chat.completions.create({ model: 'grok-4', messages: [{ role: 'user', content: riskPrompt }] });
+          const rawRisks = JSON.parse(completion.choices[0].message.content!);
+          parsed.risks = flattenRisks(rawRisks);
+        } else {
+          const allRisks: string[] = [];
+          for (const file of splitFiles) {
+            try {
+              const splitPath = `${parsed.storage_path}/splits/${file.name}`;
+              const { data: splitBlob } = await supabase.storage.from('enki-storage').download(splitPath);
+              if (!splitBlob) continue;
+
+              // Convert Blob to Buffer for pdf-parse
+              const splitBuffer = Buffer.from(await splitBlob.arrayBuffer());
+
+              const splitData = await pdf(splitBuffer);
+              let splitText = splitData.text;
+
+              // Truncate per-section text if needed (though splits are smaller)
+              if (splitText.length > MAX_CHARS) {
+                splitText = splitText.slice(0, MAX_CHARS) + '... [truncated for prompt length]';
+              }
+
+              const riskPrompt = composeRiskPrompt(splitText);
+              const completion = await openai.chat.completions.create({ model: 'grok-4', messages: [{ role: 'user', content: riskPrompt }] });
+              const rawRisks = JSON.parse(completion.choices[0].message.content!);
+              allRisks.push(...flattenRisks(rawRisks));
+            } catch (riskErr: any) {
+              console.error(`Risk parse error for ${file.name}: ${riskErr.message}`);
+              // Continue, risks partial
+            }
+          }
+          parsed.risks = allRisks;
+        }
+
+        // Update job with aggregated risks (assume job_id from context or query by user/contract_number)
+        // For simplicity: Query by user_id and contract_number (if available)
+        if (parsed.contract_number) {
+          const { error: updateError } = await supabase
+            .from('jobs')
+            .update({ risks: parsed.risks })
+            .eq('user_id', userId)
+            .eq('contract_number', parsed.contract_number);
+
+          if (updateError) console.warn(`Risks update failed: ${updateError.message}`);
+        }
+      }
+
+      results.push(parsed);
+    } catch (error: any) {
       console.error('Grok parse error:', error);
-      results.push(subphase === 'split' ? { splits: [] } : { contract_number: null, /* ... */ risks: [] });
+      const fallbackParsed: ParsedJob = {
+        contract_number: null,
+        contract_amount: null,
+        constructor_name: null,
+        constructor_address: null,
+        project_name: null,
+        project_address: null,
+        owner_name: null,
+        owner_address: null,
+        architect_name: null,
+        architect_address: null,
+        scope_of_work: null,
+        risks: [],
+        splits: {},
+        storage_path: null,
+        error_msg: `Overall error: ${error.message}`
+      };
+      results.push(fallbackParsed);
     }
   }
 

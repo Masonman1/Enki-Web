@@ -1,7 +1,4 @@
-// lib/phase-hook.ts (UPDATED: Minor tweaks for config integration; ensured consistent exports for session/loading; added optional onGenerateCustom handling from page/config if extended)
-// No major changes needed as hook already consumes PhaseUploadOptions; clarified types and defaults for robustness
-// FIXED: Supabase Storage RLS violation by aligning path to allowed folders ('jobs' as container) and user_<uid>; added signed URLs for private bucket parsing
-
+// lib/phase-hook.ts (UPDATED: RLS-aligned path starting with '${focus}/user_${userId}/...' to match policy: path[1] = 'phase1a', path[2] = 'user_<uid>')
 'use client'; // Client hook
 
 import { Session } from '@supabase/supabase-js';
@@ -16,88 +13,104 @@ import { v4 as uuidv4 } from 'uuid'; // For unique paths
 export interface PhaseUploadOptions { // EXPORT: Type for config (used in phase-config.ts)
   focus: string; // e.g., 'phase1a'
   generateType: 'exhibits' | 'clauses' | 'notes' | 'packages'; // From generateFromRisks
-  context?: { jurisdiction?: string; materialType?: string; leadTime?: number }; // Optional gen context
-  extraParsedFields?: string[]; // e.g., ['contract_number', 'scope_of_work'] for essentials
-  onGenerateCustom?: (risks: string[]) => Promise<string[]>; // Optional override for custom gen (e.g., Phase 1C products)
+  context?: { jurisdiction?: string; materialType?: string; leadTime?: number };
+  extraParsedFields?: string[]; // e.g., ['contract_number', ...] for essentials display
+  onGenerateCustom?: (risks: string[]) => Promise<string[]>; // Optional page-specific override
 }
 
-export function usePhaseUpload(options: PhaseUploadOptions) {
-  const { focus, generateType, context = {}, extraParsedFields = [], onGenerateCustom } = options;
-  const [uploading, setUploading] = useState(false);
+export function usePhaseUpload(config: PhaseUploadOptions) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true); // Covers init + session check
+  const [uploading, setUploading] = useState(false); // Separate for upload/parse
   const [error, setError] = useState<string | null>(null);
   const [risks, setRisks] = useState<string[]>([]);
   const [generatedItems, setGeneratedItems] = useState<string[]>([]);
-  const [parsedEssentials, setParsedEssentials] = useState<Record<string, unknown> | undefined>(undefined);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // Consistent init loading (session check)
+  const [parsedEssentials, setParsedEssentials] = useState<Record<string, unknown>>({});
   const router = useRouter();
   const supabase = useSupabase();
 
+  const {
+    focus,
+    generateType,
+    context = {},
+    extraParsedFields = [],
+    onGenerateCustom,
+  } = config;
+
   useEffect(() => {
-    const init = async () => {
+    async function initSession() {
       if (!supabase) {
-        setError('Supabase not initialized');
         setLoading(false);
         return;
       }
+
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      if (!session) router.push('/');
       setLoading(false);
+
+      if (!session && !window.location.pathname.startsWith('/phase1b')) {
+        router.push('/');
+      }
+    }
+
+    initSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (!newSession && !window.location.pathname.startsWith('/phase1b')) {
+        router.push('/');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
     };
-    init();
   }, [supabase, router]);
 
   const handleUpload = async (files: File[]) => {
-    if (files.length === 0 || loading || uploading) return; // Guard during loading/uploading
+    if (!supabase || !session) {
+      setError('Auth required for upload');
+      return;
+    }
+
     setUploading(true);
     setError(null);
     setRisks([]);
     setGeneratedItems([]);
-    setParsedEssentials(undefined);
+    setParsedEssentials({});
 
     try {
-      if (!session) throw new Error('No session');
-      const userId = session.user.id;
-      const userFolder = `user_${userId}`;
-      const phaseFolder = focus; // e.g., 'phase1a'
-      const filePaths: string[] = [];
-      const signedUrls: string[] = [];
+      // Upload to RLS-aligned temp path (phase prefix directly + user-specific: '${focus}/user_${userId}/${uuid}/${file.name}')
+      const userPath = `${focus}/user_${session.user.id}/${uuidv4()}`; // Matches policy: path[1] = 'phase1a', path[2] = 'user_<uid>'
+      const urls: string[] = [];
 
       for (const file of files) {
-        const fileUniqueId = uuidv4();
-        const uniquePath = `jobs/${userFolder}/${phaseFolder}/${fileUniqueId}/${file.name}`;
-        const { error: uploadError } = await supabase.storage
+        const filePath = `${userPath}/${file.name}`;
+        const { error: uploadErr } = await supabase.storage
           .from('enki-storage')
-          .upload(uniquePath, file);
+          .upload(filePath, file);
 
-        if (uploadError) throw uploadError;
-        filePaths.push(uniquePath);
+        if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
-        // Get signed URL for private bucket access (for pdf-parse in parseFiles)
-        const { data, error: signError } = await supabase.storage
+        // Get signed URL for parse (private bucket)
+        const { data: { signedUrl } } = await supabase.storage
           .from('enki-storage')
-          .createSignedUrl(uniquePath, 3600); // 1-hour expiry; adjust as needed
+          .createSignedUrl(filePath, 3600); // 1hr expiry
 
-        if (signError || !data?.signedUrl) throw signError || new Error('Failed to sign URL');
-        signedUrls.push(data.signedUrl);
+        if (!signedUrl) throw new Error('Signed URL failed');
+        urls.push(signedUrl);
       }
 
-      const parsedResults = await parseFiles(signedUrls, { focus });
-      console.log('Parsed results:', parsedResults); // Debug
+      // Parse (chained in ai-parse.ts; pass userId)
+      const parsed = await parseFiles(urls, { focus: config.focus, userId: session.user.id });
 
-      const allRisks = parsedResults.flatMap(r => r.risks || []);
+      // Aggregate risks (flatten across files)
+      const allRisks = parsed.risks ?? []; // From chained risks
+
       setRisks(allRisks);
+      setParsedEssentials(parsed); // Full essentials
 
-      // Extract essentials if specified
-      if (extraParsedFields.length > 0 && parsedResults.length > 0) {
-        const essentials: Record<string, unknown> = {};
-        extraParsedFields.forEach(field => {
-          essentials[field] = parsedResults[0][field as keyof typeof parsedResults[0]] ?? null;
-        });
-        setParsedEssentials(essentials);
-      }
-
+      // Generate (custom or default)
       let generated: string[];
       if (onGenerateCustom) {
         generated = await onGenerateCustom(allRisks);
