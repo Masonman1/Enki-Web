@@ -33,9 +33,8 @@ export function usePhaseUpload(config: PhaseUploadOptions) {
     focus,
     generateType,
     context = {},
-    extraParsedFields = [],
-    onGenerateCustom,
-  } = config;
+    extraParsedFields, // Now used below
+    } = config;
 
   useEffect(() => {
     async function initSession() {
@@ -102,14 +101,17 @@ export function usePhaseUpload(config: PhaseUploadOptions) {
       }
 
       // Parse (chained in ai-parse.ts; pass userId)
-      const parsed = await parseFiles(urls, { focus: config.focus, userId: session.user.id });
+      const parsed = await parseFiles(urls, { focus: config.focus, userId: session?.user?.id });
 
       // Aggregate risks (flatten across files)
       const allRisks = parsed.risks ?? []; // From chained risks
 
       setRisks(allRisks);
       setParsedEssentials(parsed); // Full essentials
-
+      const filteredEssentials = extraParsedFields 
+  ? Object.fromEntries(Object.entries(parsed).filter(([key]) => extraParsedFields.includes(key))) 
+  : parsed;
+setParsedEssentials(filteredEssentials); // Now filters to config fields (e.g., for Phase 1A display)
       // Generate (custom or default)
       let generated: string[];
       if (onGenerateCustom) {

@@ -1,9 +1,10 @@
+// components/auth-wrapper.tsx (UPDATED: Bypass guard at / to render login form; added logs for debug)
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js'; // Import Session type from Supabase
+import { Session } from '@supabase/supabase-js';
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -43,11 +44,19 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   }, [supabase, router]);
 
   if (loading) {
+    console.log('AuthWrapper: Loading...');
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
+  const path = window.location.pathname;
+  if (path === '/') {
+    console.log('AuthWrapper: At login path - rendering children');
+    return <>{children}</>; // Bypass guard for login form
+  }
+
   if (!session) {
-    return <div className="flex min-h-screen items-center justify-center">Unauthorized - Redirecting...</div>; // Use session to resolve unused warning
+    console.log('AuthWrapper: No session at path:', path);
+    return <div className="flex min-h-screen items-center justify-center">Unauthorized - Redirecting...</div>;
   }
 
   return <>{children}</>;

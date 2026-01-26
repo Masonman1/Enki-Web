@@ -14,6 +14,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+
+
 export default function Home() {
   const { session, loading: authLoading } = useAuth(); // Top-level hook
   const supabase = useSupabase(); // Top-level hook
@@ -25,6 +27,7 @@ export default function Home() {
   const [isSignUp, setIsSignUp] = useState(false); // Moved to top
 
   useEffect(() => { // Moved to top (unconditional)
+    console.log('Home page rendering—path:', window.location.pathname);
     if (session) {
       router.push('/dashboard');
     }
@@ -33,6 +36,8 @@ export default function Home() {
   if (authLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
+
+  console.log('Rendering login form');
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
