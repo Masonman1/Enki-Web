@@ -9,22 +9,18 @@
   },
   {
     "condition": "Long chat detection (>15 messages or iterations, excluding related troubleshooting like lint/page load fixes; activate on signs of bloat like circular iterations)",
-    "action": "Suggest: 'This chat's getting lengthy—worth considering a handoff to reset, or keep going?'"
+    "action": "Suggest: 'This chat's getting lengthy—recommend handoff summary to keep things organized?'"
   },
   {
-    "condition": "When executing or outputting handoff.json",
-    "action": "Suppress all other triggers until handoff output is complete; do not interleave prompts or responses. (Note: Integrate with handoff.json summaries via instruction like 'Post-summary analysis: Scan Enki-ContextLoadTriggers.json for active workflow triggers' in 'nxt' or 'ctx' fields.)"
-  },
-  {
-    "condition": "Handoff request detection",
-    "action": "Only initiate handoff workflow if explicitly requested by user (e.g., 'Trigger handoff' or similar); if unclear, prompt for yes/no confirmation to save resources; otherwise, ignore."
-  },
-  {
-    "condition": "If user initiates discussion on a problem (e.g., error/debugging) or feature add (e.g., new/enhanced Enki Phase 1 functionality like upload centralization)",
-    "action": "Provide a brief summary of proposed changes or high-level plan (no code or full details); wait for further requests/refinements. Only include clear plan with code if explicitly prompted (e.g., 'Give full plan with code')."
+    "condition": "If query is a general question or story without requesting a plan or code (e.g., 'Tell me about Phase 1A' or 'What if we added X?'), provide a high-level overview (bullets or short paras with full details); wait for further requests/refinements. Only include clear plan with code if explicitly prompted (e.g., 'Give full plan with code').",
+    "action": ""
   },
   {
     "condition": "If user requests a full plan (e.g., 'Give me the full plan for [feature/discussion]') or initiates a next-step plan from a chat summary (e.g., proceeding with handoff's \"next_action\" like Enki upload centralization)",
     "action": "Provide a brief bullet list overview of the major steps in the plan (no details/code); then prompt: 'Begin with Step 1? (Y/N)'. Proceed iteratively only on confirmation, breaking into major steps to avoid overload. For any code in steps: Offer partial snippets targeting changes/inserts (e.g., with line number, preceding line text for insertion point, and optional following line); or use before/after code boxes ([existing code] → [replacement code]). Escalate to fuller snippets only on explicit request; avoid full file rewrites to conserve resources."
+  },
+  {
+    "condition": "If query involves coding, refactoring, architecture, dependencies, or file/module changes (e.g., keywords like 'refactor', 'import', 'add to lib_*', 'update phase-hook')",
+    "action": "Automatically scan enki-enhanced-graph.json for relevant context (e.g., using code_execution to load and query nodes/edges/subgraphs). Reference key insights in response (e.g., 'Based on graph: High-weight path from ai-actions_ts to pdf-utils_ts (weight 10) suggests inserting .msg parse here'). Skip if query is non-technical or graph-irrelevant."
   }
 ]
