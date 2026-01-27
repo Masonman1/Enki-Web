@@ -1,5 +1,6 @@
 // app/page.tsx (UPDATED: Moved all useState and useEffect hooks to top-level before early return to resolve react-hooks/rules-of-hooks lint errors)
 // Note: Hooks now unconditional; early return for authLoading follows after all hook calls
+// Additional: Use toast.promise in handleSubmit for loading feedback during auth (masks redirect delay)
 
 'use client';
 
@@ -13,8 +14,7 @@ import { useSupabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-
+import toast from "react-hot-toast";
 
 export default function Home() {
   const { session, loading: authLoading } = useAuth(); // Top-level hook
@@ -26,40 +26,39 @@ export default function Home() {
   const [loading, setLoading] = useState(false); // Moved to top
   const [isSignUp, setIsSignUp] = useState(false); // Moved to top
 
-  useEffect(() => { // Moved to top (unconditional)
-    console.log('Home page rendering—path:', window.location.pathname);
-    if (session) {
+  useEffect(() => {
+    if (session && !authLoading) {
       router.push('/dashboard');
     }
-  }, [session, router]);
+  }, [session, authLoading, router]); // Top-level effect
 
   if (authLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
-  console.log('Rendering login form');
+  console.log('Home page rendering—path:', window.location.pathname); // Debug log (remove post-test)
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError(null);
 
     try {
-      let result;
-      if (isSignUp) {
-        result = await supabase.auth.signUp({ email, password });
-      } else {
-        result = await supabase.auth.signInWithPassword({ email, password });
-      }
-
-      if (result.error) {
-        setError(result.error.message);
-      } else {
-        router.push('/dashboard');
-      }
+      await toast.promise(
+        (async () => {
+          const { error } = await supabase.auth[isSignUp ? 'signUp' : 'signInWithPassword']({ email, password });
+          if (error) throw error;
+        })(),
+        {
+          loading: 'Authenticating...',
+          success: 'Logged in—redirecting!',
+          error: (err) => `Failed: ${err.message}`,
+        }
+      );
+      router.push('/dashboard');
+      router.refresh(); // Optional: Force dashboard hydration if needed
     } catch (err) {
-      setError('Unexpected error');
-      console.error(err);
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -70,10 +69,10 @@ export default function Home() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{isSignUp ? "Sign Up" : "Sign In"}</CardTitle>
-          <CardDescription>{isSignUp ? "Create a new account" : "Enter your credentials"}</CardDescription>
+          <CardDescription>{isSignUp ? "Create a new account" : "Welcome back to Enki"}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input

@@ -7,24 +7,6 @@ import { callAiForEssentials, callAiForSplits, callAiForRisks } from '@/lib/ai-a
 import { uploadSplitPdfs } from '@/lib/ai-actions/storage-utils'; // Remove updateJobRisks import
 import { ParsedJob, createFallbackParsed } from '@/lib/ai-actions/error-utils'; // UPDATED: Add ParsedJob import
 
-interface ParsedContract {
-  contract_number: string | null;
-  contract_amount: number | null;
-  constructor_name: string | null;
-  constructor_address: string | null;
-  project_name: string | null;
-  project_address: string | null;
-  owner_name: string | null;
-  owner_address: string | null;
-  architect_name: string | null;
-  architect_address: string | null;
-  scope_of_work: string | null;
-}
-
-interface ParsedSplit {
-  [section: string]: string; // e.g., { "schedule": "156-160", "insurance": "45-52" }
-}
-
 // NEW: ParsedJob now imported from error-utils.ts for type consistency
 
 export async function parseFilesAction(fileUrls: string[], focus?: string, userId?: string) {

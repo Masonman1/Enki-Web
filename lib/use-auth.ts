@@ -1,10 +1,11 @@
 // lib/use-auth.ts (UPDATED: Added error handling, isMounted guard, and debug logs for loop prevention; ensured redirect exclusion works robustly)
+// Additional: Use window.location.href for sync redirect in logout to fix race/flash
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase';
-import { AuthChangeEvent, Session } from '@supabase/supabase-js'; // NEW: Add AuthChangeEvent for typing
-import toast from 'react-hot-toast'; // Assuming imported for error UI; add if needed
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import toast from 'react-hot-toast';
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -47,6 +48,7 @@ export function useAuth() {
         if (!newSession && !path.startsWith('/phase1b') && path !== '/') {
           console.log('State change redirect to / from path:', path);
           router.push('/');
+          router.refresh(); // Refresh for state clear
         } else if (path === '/') {
           console.log('State change redirect skipped: already at /');
         }
@@ -62,8 +64,10 @@ export function useAuth() {
   const logout = async () => {
     if (!supabase) return;
     try {
-      await supabase.auth.signOut();
-      router.push('/');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      // Sync redirect to bypass async race/flash
+      window.location.href = '/';
     } catch (err) {
       console.error('Logout error:', err);
       toast.error('Logout failed');

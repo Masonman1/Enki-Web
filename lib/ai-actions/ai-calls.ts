@@ -1,19 +1,17 @@
 // lib/ai-actions/ai-calls.ts (updated init with bypass)
 
+'use server'; // NEW: Enforce server-only
+
 import OpenAI from 'openai';
 import pdf from 'pdf-parse';
 import { composeEssentialsPrompt } from '@/lib/prompts/phase1a/essentials';
 import { composeSplitPrompt } from '@/lib/prompts/phase1a/split-prompts';
 import { composeRiskPrompt, flattenRisks } from '@/lib/prompts/phase1a/risk-prompts';
 
-// Debug env (keep for now)
-console.log('GROK_API_KEY:', process.env.GROK_API_KEY ? 'Set (length: ' + process.env.GROK_API_KEY.length + ')' : 'Undefined');
-console.log('Base URL:', 'https://api.x.ai/v1/');
-
+console.log('GROK_API_KEY:', process.env.GROK_API_KEY ? 'Set (length: ' + process.env.GROK_API_KEY.length + ')' : 'Undefined'); // Now logs server-side only
 const openai = new OpenAI({ 
   apiKey: process.env.GROK_API_KEY, 
   baseURL: 'https://api.x.ai/v1/',
-  dangerouslyAllowBrowser: true // Bypass browser check (dev-only!)
 });
 
 interface ParsedContract { // Partial for essentials

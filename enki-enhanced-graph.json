@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-27T15:54:28.155Z",
+  "generated_at": "2026-01-27T19:32:49.101Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -35,23 +35,23 @@
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/dashboard/page.tsx (UPDATED: Add index signature to ChatSummary for TS fix; no logic changes)\r\n\r...",
+      "desc": "app/dashboard/page.tsx (SIMPLIFIED: Removed chat summaries/dev_logs features for Phase 1 focus; move...",
       "exports": [],
-      "lines": 187,
+      "lines": 68,
       "external": true
     },
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/dev/page.tsx (UPDATED: Valid mockGraph + dynamic Mermaid wrapper for TS/build fix)\r\n\r\n'use clien...",
+      "desc": "app/dev/page.tsx (UPDATED: Valid mockGraph + dynamic Mermaid wrapper for TS/build fix)\r\n// Additiona...",
       "exports": [],
-      "lines": 186,
+      "lines": 96,
       "external": true
     },
     {
       "id": "layout_tsx",
       "category": "misc",
-      "desc": "NEW: For global toasts\n\nconst geistSans = Geist({\n  variable: \"--font-geist-sans\",\n  subsets: [\"lati...",
+      "desc": "CORRECTED: Use 'Geist' and 'Geist_Mono' from next/font/google (per workspace file; fixes \"Unknown fo...",
       "exports": [
         "metadata"
       ],
@@ -63,7 +63,7 @@
       "category": "misc",
       "desc": "app/page.tsx (UPDATED: Moved all useState and useEffect hooks to top-level before early return to re...",
       "exports": [],
-      "lines": 123,
+      "lines": 122,
       "external": true
     },
     {
@@ -71,7 +71,7 @@
       "category": "misc",
       "desc": "app/phase1a/page.tsx\r\n'use client';\r\n\r\nimport { usePhaseUpload } from '@/lib/phase-hook';\r\nimport Ph...",
       "exports": [],
-      "lines": 64,
+      "lines": 36,
       "external": true
     },
     {
@@ -199,9 +199,9 @@
     {
       "id": "ai-calls_ts",
       "category": "misc",
-      "desc": "lib/ai-actions/ai-calls.ts (updated init with bypass)\r\n\r\nimport OpenAI from 'openai';\r\nimport pdf fr...",
+      "desc": "lib/ai-actions/ai-calls.ts (updated init with bypass)\r\n\r\n'use server'; // NEW: Enforce server-only\r\n...",
       "exports": [],
-      "lines": 83,
+      "lines": 81,
       "external": true
     },
     {
@@ -244,7 +244,7 @@
       "category": "misc",
       "desc": "lib/ai-actions.ts (refactored: Now orchestration-only, no risks update per schema)\r\n// 'use server';...",
       "exports": [],
-      "lines": 65,
+      "lines": 47,
       "external": true
     },
     {
@@ -346,7 +346,7 @@
       "exports": [
         "useAuth"
       ],
-      "lines": 74,
+      "lines": 78,
       "external": true
     },
     {
@@ -362,7 +362,7 @@
     {
       "id": "next-env_d_ts",
       "category": "misc",
-      "desc": "<reference types=\"next\" />\n/// <reference types=\"next/image-types/global\" />\nimport \"./.next/types/r...",
+      "desc": "<reference types=\"next\" />\n/// <reference types=\"next/image-types/global\" />\nimport \"./.next/dev/typ...",
       "exports": [],
       "lines": 7,
       "external": true
@@ -429,18 +429,6 @@
     },
     {
       "source": "page_tsx",
-      "target": "components_ui_alert",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_ui_table",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
       "target": "lib_use-auth",
       "type": "import",
       "weight": 7
@@ -459,27 +447,15 @@
     },
     {
       "source": "page_tsx",
-      "target": "components_ui_textarea",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "lucide-react",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
       "target": "react-hot-toast",
       "type": "import",
       "weight": 5
     },
     {
       "source": "page_tsx",
-      "target": "lib_ai-generate",
-      "type": "import",
-      "weight": 7
+      "target": "authLogout",
+      "type": "call",
+      "weight": 8
     },
     {
       "source": "page_tsx",
@@ -513,19 +489,7 @@
     },
     {
       "source": "page_tsx",
-      "target": "components_ui_alert",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
       "target": "components_ui_table",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_ui_input",
       "type": "import",
       "weight": 5
     },
@@ -627,6 +591,12 @@
     },
     {
       "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
       "target": "lib_phase-hook",
       "type": "import",
       "weight": 7
@@ -648,30 +618,6 @@
       "target": "react-hot-toast",
       "type": "import",
       "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_ui_button",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "lib_use-auth",
-      "type": "import",
-      "weight": 7
-    },
-    {
-      "source": "page_tsx",
-      "target": "lib_ai-actions",
-      "type": "import",
-      "weight": 7
-    },
-    {
-      "source": "page_tsx",
-      "target": "parseFilesAction",
-      "type": "call",
-      "weight": 8
     },
     {
       "source": "page_tsx",
@@ -1306,7 +1252,7 @@
   ],
   "stats": {
     "nodeCount": 40,
-    "edgeCount": 153,
-    "avgLines": 62.2
+    "edgeCount": 144,
+    "avgLines": 55.85
   }
 }

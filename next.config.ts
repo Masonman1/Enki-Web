@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
   },
-  reactStrictMode: true, // Enables strict mode for better dev warnings in Phase 1 UI (e.g., upload zone reactivity)
+  reactStrictMode: false, // UPDATED: Disabled for dev to reduce double-renders/delays (re-enable for prod warnings if needed)
   output: 'standalone', // For Vercel deployment in Phase 1 (self-contained bundle)
   webpack: (config, { isServer }) => {
     if (!isServer) {

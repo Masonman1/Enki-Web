@@ -2,7 +2,7 @@
 
 declare module 'pdf-parse' {
   interface PDFParseOptions {
-    pagerender?: (pageData: any) => string;
+    pagerender?: (pageData: unknown) => string; // UPDATED: any → unknown
     max?: number;
     version?: 'default' | 'v1.10.100' | 'v1.9.426' | 'v2.0.550';
   }
@@ -11,8 +11,8 @@ declare module 'pdf-parse' {
     text: string;
     numpages: number;
     numrender: number;
-    info: any;
-    metadata: any;
+    info: unknown; // UPDATED: any → unknown
+    metadata: unknown; // UPDATED: any → unknown
     version: string;
   }
 
