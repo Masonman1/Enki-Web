@@ -1,10 +1,11 @@
-// components/auth-wrapper.tsx (UPDATED: Bypass guard at / to render login form; added logs for debug)
+// components/auth-wrapper.tsx
+
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';  // ← Make sure this import exists
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -33,12 +34,17 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     }
     init();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (!newSession && !window.location.pathname.startsWith('/phase1b')) {
-        router.push('/');
+    if (!supabase) return () => {}; // Early cleanup
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      // Add types here ↓↓↓
+      (_event: AuthChangeEvent, newSession: Session | null) => {
+        setSession(newSession);
+        if (!newSession && !window.location.pathname.startsWith('/phase1b')) {
+          router.push('/');
+        }
       }
-    });
+    );
 
     return () => authListener.subscription.unsubscribe();
   }, [supabase, router]);

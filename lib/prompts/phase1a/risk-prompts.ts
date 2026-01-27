@@ -34,10 +34,10 @@ ${text}
 
 // Post-processing (update flattenRisks param type)
 export const flattenRisks = (rawParsed: Record<string, unknown>) => [ // NEW: Typed instead of any
-  ...(rawParsed?.risks ?? []),
-  ...(rawParsed?.risks_misses?.risks ?? []),
-  ...(rawParsed?.risks_misses?.misses ?? []),
-  ...(rawParsed?.risks_misses?.documentation_gaps ?? []),
-  ...(rawParsed?.waterproofing_specific_risks_misses?.risks ?? []),
-  ...(rawParsed?.waterproofing_specific_risks_misses?.misses ?? [])
+  ...(rawParsed?.risks as string[] ?? []),
+  ...((rawParsed?.risks_misses as { risks?: string[]; misses?: string[]; documentation_gaps?: string[] } | undefined)?.risks ?? []),
+  ...((rawParsed?.risks_misses as { risks?: string[]; misses?: string[]; documentation_gaps?: string[] } | undefined)?.misses ?? []),
+  ...((rawParsed?.risks_misses as { risks?: string[]; misses?: string[]; documentation_gaps?: string[] } | undefined)?.documentation_gaps ?? []),
+  ...((rawParsed?.waterproofing_specific_risks_misses as { risks?: string[]; misses?: string[] } | undefined)?.risks ?? []),
+  ...((rawParsed?.waterproofing_specific_risks_misses as { risks?: string[]; misses?: string[] } | undefined)?.misses ?? [])
 ];

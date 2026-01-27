@@ -1,0 +1,1312 @@
+{
+  "generated_at": "2026-01-27T15:54:28.155Z",
+  "branch": "refactor-phase1-flatten",
+  "subgraphs": {
+    "PhasePages": {
+      "ids": [],
+      "desc": "All Phase 1 subphase pages (e.g., 1a pre-bid)"
+    },
+    "AiActions": {
+      "ids": [
+        "ai-actions_ts"
+      ],
+      "desc": "AI parse/split/risk modules for waterproofing"
+    },
+    "HooksUtils": {
+      "ids": [
+        "error-utils_ts",
+        "pdf-utils_ts",
+        "storage-utils_ts",
+        "phase-hook_ts",
+        "utils_ts"
+      ],
+      "desc": "Reusable hooks and utils (e.g., auth, upload)"
+    }
+  },
+  "nodes": [
+    {
+      "id": "route_ts",
+      "category": "misc",
+      "desc": "app/api/parse/route.ts (enhanced with logs)\r\nimport { NextRequest, NextResponse } from 'next/server'...",
+      "exports": [],
+      "lines": 19,
+      "external": true
+    },
+    {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/dashboard/page.tsx (UPDATED: Add index signature to ChatSummary for TS fix; no logic changes)\r\n\r...",
+      "exports": [],
+      "lines": 187,
+      "external": true
+    },
+    {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/dev/page.tsx (UPDATED: Valid mockGraph + dynamic Mermaid wrapper for TS/build fix)\r\n\r\n'use clien...",
+      "exports": [],
+      "lines": 186,
+      "external": true
+    },
+    {
+      "id": "layout_tsx",
+      "category": "misc",
+      "desc": "NEW: For global toasts\n\nconst geistSans = Geist({\n  variable: \"--font-geist-sans\",\n  subsets: [\"lati...",
+      "exports": [
+        "metadata"
+      ],
+      "lines": 37,
+      "external": true
+    },
+    {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/page.tsx (UPDATED: Moved all useState and useEffect hooks to top-level before early return to re...",
+      "exports": [],
+      "lines": 123,
+      "external": true
+    },
+    {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/phase1a/page.tsx\r\n'use client';\r\n\r\nimport { usePhaseUpload } from '@/lib/phase-hook';\r\nimport Ph...",
+      "exports": [],
+      "lines": 64,
+      "external": true
+    },
+    {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/phase1b/page.tsx (UPDATED: Refactored to centralized Phase 1 patterns; types auth listener to fi...",
+      "exports": [],
+      "lines": 61,
+      "external": true
+    },
+    {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/test-storage/page.tsx (UPDATED: Correct import for FileObject from storage-js; TS fix)\r\n\r\n'use c...",
+      "exports": [],
+      "lines": 98,
+      "external": true
+    },
+    {
+      "id": "auth-wrapper_tsx",
+      "category": "misc",
+      "desc": "components/auth-wrapper.tsx\r\n\r\n'use client';\r\n\r\nimport { useState, useEffect, ReactNode } from 'reac...",
+      "exports": [],
+      "lines": 69,
+      "external": true
+    },
+    {
+      "id": "upload-zone_tsx",
+      "category": "misc",
+      "desc": "Client component for hooks\r\n\r\nimport { useCallback, useState } from 'react';\r\nimport { useDropzone }...",
+      "exports": [],
+      "lines": 65,
+      "external": true
+    },
+    {
+      "id": "header_tsx",
+      "category": "misc",
+      "desc": "components/layout/header.tsx: Stub for Enki header (Phase 1 dashboard nav)\r\nimport { Button } from '...",
+      "exports": [
+        "Header"
+      ],
+      "lines": 11,
+      "external": true
+    },
+    {
+      "id": "phase-layout_tsx",
+      "category": "misc",
+      "desc": "components/phase-layout.tsx (UPDATED: Removed unused 'uploading' prop to fix lint warning; loading n...",
+      "exports": [],
+      "lines": 144,
+      "external": true
+    },
+    {
+      "id": "alert_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 67,
+      "external": true
+    },
+    {
+      "id": "button_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 63,
+      "external": true
+    },
+    {
+      "id": "card_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 93,
+      "external": true
+    },
+    {
+      "id": "input_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 22,
+      "external": true
+    },
+    {
+      "id": "label_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 25,
+      "external": true
+    },
+    {
+      "id": "table_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 117,
+      "external": true
+    },
+    {
+      "id": "textarea_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 19,
+      "external": true
+    },
+    {
+      "id": "jest_config_ts",
+      "category": "misc",
+      "desc": "Updated: Embed ts-jest config here\r\n    '^.+\\\\.(js|jsx)$': 'babel-jest'\r\n  },\r\n  moduleNameMapper: {...",
+      "exports": [],
+      "lines": 17,
+      "external": true
+    },
+    {
+      "id": "jest_setup_ts",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 1,
+      "external": true
+    },
+    {
+      "id": "ai-calls_ts",
+      "category": "misc",
+      "desc": "lib/ai-actions/ai-calls.ts (updated init with bypass)\r\n\r\nimport OpenAI from 'openai';\r\nimport pdf fr...",
+      "exports": [],
+      "lines": 83,
+      "external": true
+    },
+    {
+      "id": "error-utils_ts",
+      "category": "misc",
+      "desc": "lib/ai-actions/error-utils.ts\r\n// Extracted error handling and fallbacks\r\n\r\nexport interface ParsedJ...",
+      "exports": [
+        "ParsedJob",
+        "createFallbackParsed"
+      ],
+      "lines": 40,
+      "external": true
+    },
+    {
+      "id": "pdf-parse_d_ts",
+      "category": "misc",
+      "desc": "NEW FILE: lib/ai-actions/pdf-parse.d.ts (Add this file to provide type declarations for 'pdf-parse' ...",
+      "exports": [],
+      "lines": 22,
+      "external": true
+    },
+    {
+      "id": "pdf-utils_ts",
+      "category": "misc",
+      "desc": "lib/ai-actions/pdf-utils.ts\r\n// Extracted PDF handling for text extraction and splitting\r\n\r\nimport p...",
+      "exports": [],
+      "lines": 40,
+      "external": true
+    },
+    {
+      "id": "storage-utils_ts",
+      "category": "misc",
+      "desc": "lib/ai-actions/storage-utils.ts\r\n// Extracted Supabase storage and DB updates (removed updateJobRisk...",
+      "exports": [],
+      "lines": 24,
+      "external": true
+    },
+    {
+      "id": "ai-actions_ts",
+      "category": "misc",
+      "desc": "lib/ai-actions.ts (refactored: Now orchestration-only, no risks update per schema)\r\n// 'use server';...",
+      "exports": [],
+      "lines": 65,
+      "external": true
+    },
+    {
+      "id": "ai-generate_ts",
+      "category": "misc",
+      "desc": "lib/ai-generate.ts\r\nexport const generateFromRisks = async (risks: string[], options: { type: 'exhib...",
+      "exports": [
+        "generateFromRisks",
+        "formatForHuman"
+      ],
+      "lines": 79,
+      "external": true
+    },
+    {
+      "id": "ai-parse_ts",
+      "category": "misc",
+      "desc": "lib/ai-parse.ts (updated to call API route for server-only execution)\r\n\r\nexport const parseFiles = a...",
+      "exports": [
+        "parseFiles"
+      ],
+      "lines": 11,
+      "external": true
+    },
+    {
+      "id": "phase-config_ts",
+      "category": "misc",
+      "desc": "lib/phase-config.ts (NEW: Centralized configs for Phase 1 sub-phases; extendable for future phases)\r...",
+      "exports": [
+        "PHASE_CONFIGS"
+      ],
+      "lines": 89,
+      "external": true
+    },
+    {
+      "id": "phase-hook_ts",
+      "category": "misc",
+      "desc": "lib/phase-hook.ts (UPDATED: RLS-aligned path starting with '${focus}/user_${userId}/...' to match po...",
+      "exports": [
+        "PhaseUploadOptions",
+        "usePhaseUpload"
+      ],
+      "lines": 165,
+      "external": true
+    },
+    {
+      "id": "essentials_ts",
+      "category": "misc",
+      "desc": "lib/prompts/phase1a/essentials.ts\r\n// Extracted verbatim for Phase 1A essentials (e.g., contract_num...",
+      "exports": [
+        "subcontractNumberModule",
+        "contractAmountModule",
+        "constructorNameModule",
+        "constructorAddressModule",
+        "projectNameModule"
+      ],
+      "lines": 122,
+      "external": true
+    },
+    {
+      "id": "risk-prompts_ts",
+      "category": "misc",
+      "desc": "lib/prompts/phase1a/risk-prompts.ts\r\n// Waterproofing-specific risks (e.g., substrate misses, lead t...",
+      "exports": [
+        "risksModule",
+        "risksMissesModule",
+        "waterproofingSpecificRisksMissesModule",
+        "composeRiskPrompt",
+        "flattenRisks"
+      ],
+      "lines": 43,
+      "external": true
+    },
+    {
+      "id": "split-prompts_ts",
+      "category": "misc",
+      "desc": "lib/prompts/phase1a/split-prompts.ts\r\n// Dedicated prompts for identifying subcontract sections (e.g...",
+      "exports": [
+        "splitModule",
+        "composeSplitPrompt"
+      ],
+      "lines": 30,
+      "external": true
+    },
+    {
+      "id": "supabase_ts",
+      "category": "misc",
+      "desc": "Global singleton instance (lazy-initialized)\r\nlet supabaseSingleton: ReturnType<typeof createBrowser...",
+      "exports": [
+        "getSupabaseClient",
+        "useSupabase"
+      ],
+      "lines": 31,
+      "external": true
+    },
+    {
+      "id": "use-auth_ts",
+      "category": "misc",
+      "desc": "lib/use-auth.ts (UPDATED: Added error handling, isMounted guard, and debug logs for loop prevention;...",
+      "exports": [
+        "useAuth"
+      ],
+      "lines": 74,
+      "external": true
+    },
+    {
+      "id": "utils_ts",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [
+        "cn"
+      ],
+      "lines": 7,
+      "external": true
+    },
+    {
+      "id": "next-env_d_ts",
+      "category": "misc",
+      "desc": "<reference types=\"next\" />\n/// <reference types=\"next/image-types/global\" />\nimport \"./.next/types/r...",
+      "exports": [],
+      "lines": 7,
+      "external": true
+    },
+    {
+      "id": "next_config_ts",
+      "category": "config",
+      "desc": "@type {import('next').NextConfig}...",
+      "exports": [],
+      "lines": 30,
+      "external": true
+    },
+    {
+      "id": "tailwind_config_ts",
+      "category": "misc",
+      "desc": "@type {import('tailwindcss').Config}...",
+      "exports": [],
+      "lines": 38,
+      "external": true
+    }
+  ],
+  "edges": [
+    {
+      "source": "route_ts",
+      "target": "next_server",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "route_ts",
+      "target": "lib_ai-actions",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "route_ts",
+      "target": "parseFilesAction",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_link",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_card",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_alert",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_table",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-auth",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_textarea",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_ai-generate",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-auth",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_card",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_alert",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_table",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_input",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_dynamic",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "layout_tsx",
+      "target": "next",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "layout_tsx",
+      "target": "next_font_google",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "layout_tsx",
+      "target": "components_auth-wrapper",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "layout_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_card",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_input",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_label",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_alert",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-auth",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_link",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_phase-hook",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_phase-layout",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_phase-config",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-auth",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_ai-actions",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "parseFilesAction",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_phase-hook",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_phase-layout",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_phase-config",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-auth",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "@supabase_storage-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_forms_upload-zone",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_card",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_alert",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "auth-wrapper_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "auth-wrapper_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "auth-wrapper_tsx",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "auth-wrapper_tsx",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "upload-zone_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "upload-zone_tsx",
+      "target": "react-dropzone",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "upload-zone_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "upload-zone_tsx",
+      "target": "components_ui_alert",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "upload-zone_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "header_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "components_ui_card",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "components_ui_alert",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "components_ui_table",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "components_forms_upload-zone",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-layout_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "alert_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "alert_tsx",
+      "target": "class-variance-authority",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "alert_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "button_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "button_tsx",
+      "target": "@radix-ui_react-slot",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "button_tsx",
+      "target": "class-variance-authority",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "button_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "card_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "card_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "input_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "input_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "label_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "label_tsx",
+      "target": "@radix-ui_react-label",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "label_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "table_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "table_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "textarea_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "textarea_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "jest_config_ts",
+      "target": "jest",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "ai-calls_ts",
+      "target": "openai",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "ai-calls_ts",
+      "target": "pdf-parse",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "ai-calls_ts",
+      "target": "lib_prompts_phase1a_essentials",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-calls_ts",
+      "target": "lib_prompts_phase1a_split-prompts",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-calls_ts",
+      "target": "lib_prompts_phase1a_risk-prompts",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-calls_ts",
+      "target": "pdf",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "pdf-utils_ts",
+      "target": "pdf-parse",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "pdf-utils_ts",
+      "target": "pdf-lib",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "pdf-utils_ts",
+      "target": "pdf",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "storage-utils_ts",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "storage-utils_ts",
+      "target": "uuid",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "lib_ai-actions_pdf-utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "lib_ai-actions_ai-calls",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "lib_ai-actions_storage-utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "lib_ai-actions_error-utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "fetch",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "extractPdfText",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "callAiForEssentials",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "callAiForSplits",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "splitPdfByRanges",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "callAiForRisks",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "uploadSplitPdfs",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
+      "target": "updateJobRisks",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-parse_ts",
+      "target": "fetch",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "phase-config_ts",
+      "target": "lib_phase-hook",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "lib_ai-parse",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "lib_ai-generate",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "uuid",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "parseFiles",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "onGenerateCustom",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "phase-hook_ts",
+      "target": "generateFromRisks",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "supabase_ts",
+      "target": "@supabase_ssr",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "use-auth_ts",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "use-auth_ts",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "use-auth_ts",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "use-auth_ts",
+      "target": "@supabase_supabase-js",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "use-auth_ts",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "utils_ts",
+      "target": "clsx",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "utils_ts",
+      "target": "tailwind-merge",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "next_config_ts",
+      "target": "next",
+      "type": "import",
+      "weight": 5
+    }
+  ],
+  "stats": {
+    "nodeCount": 40,
+    "edgeCount": 153,
+    "avgLines": 62.2
+  }
+}

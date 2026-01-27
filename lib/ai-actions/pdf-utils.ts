@@ -20,8 +20,9 @@ export async function splitPdfByRanges(originalBuffer: Buffer, splits: ParsedSpl
 try {
   const pages = await splitPdf.copyPages(originalPdf, Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i));
   pages.forEach(page => splitPdf.addPage(page));
-} catch (pdfErr) {
-  console.warn(`PDF split warning for ${section}:`, pdfErr.message);
+   } catch (pdfErr: unknown) {  // UPDATED: Type as unknown
+     const errorMsg = pdfErr instanceof Error ? pdfErr.message : 'Unknown PDF error';  // NEW: Safe narrow for message
+     console.warn(`PDF split warning for ${section}:`, errorMsg);  // UPDATED: Use narrowed msg
   continue; // Skip bad section
 }
 

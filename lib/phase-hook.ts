@@ -9,52 +9,62 @@ import { parseFiles } from '@/lib/ai-parse';
 import { generateFromRisks } from '@/lib/ai-generate';
 import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid'; // For unique paths
+import { AuthChangeEvent } from '@supabase/supabase-js';  // NEW: Add for typing
 
 export interface PhaseUploadOptions { // EXPORT: Type for config (used in phase-config.ts)
   focus: string; // e.g., 'phase1a'
   generateType: 'exhibits' | 'clauses' | 'notes' | 'packages'; // From generateFromRisks
   context?: { jurisdiction?: string; materialType?: string; leadTime?: number };
   extraParsedFields?: string[]; // e.g., ['contract_number', ...] for essentials display
-  onGenerateCustom?: (risks: string[]) => Promise<string[]>; // Optional page-specific override
+  onGenerateCustom?: (risks: string[]) => Promise<string[]>; // Optional: Custom gen logic
 }
 
-export function usePhaseUpload(config: PhaseUploadOptions) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // Covers init + session check
-  const [uploading, setUploading] = useState(false); // Separate for upload/parse
+export function usePhaseUpload(config: PhaseUploadOptions) { // UPDATED: Consume config for centralization
+  const { 
+    focus, 
+    generateType, 
+    context, 
+    extraParsedFields, 
+    onGenerateCustom 
+  } = config;
+
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [risks, setRisks] = useState<string[]>([]);
   const [generatedItems, setGeneratedItems] = useState<string[]>([]);
   const [parsedEssentials, setParsedEssentials] = useState<Record<string, unknown>>({});
-  const router = useRouter();
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const supabase = useSupabase();
-
-  const {
-    focus,
-    generateType,
-    context = {},
-    extraParsedFields, // Now used below
-    } = config;
+  const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+
     async function initSession() {
       if (!supabase) {
-        setLoading(false);
+        console.error('No Supabase client - check env vars');
+        if (isMounted) setLoading(false);
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setLoading(false);
-
-      if (!session && !window.location.pathname.startsWith('/phase1b')) {
-        router.push('/');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) {
+          setSession(session);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Session init error:', err);
+        if (isMounted) setLoading(false);
       }
     }
 
     initSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    if (!supabase) return () => {}; // Early cleanup if no client
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, newSession: Session | null) => {  // UPDATED: Typed params
       setSession(newSession);
       if (!newSession && !window.location.pathname.startsWith('/phase1b')) {
         router.push('/');
@@ -62,13 +72,14 @@ export function usePhaseUpload(config: PhaseUploadOptions) {
     });
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, [supabase, router]);
 
   const handleUpload = async (files: File[]) => {
-    if (!supabase || !session) {
-      setError('Auth required for upload');
+    if (!session?.user?.id && !window.location.pathname.startsWith('/phase1b')) {
+      toast.error('Login required for this phase');
       return;
     }
 
@@ -79,39 +90,47 @@ export function usePhaseUpload(config: PhaseUploadOptions) {
     setParsedEssentials({});
 
     try {
-      // Upload to RLS-aligned temp path (phase prefix directly + user-specific: '${focus}/user_${userId}/${uuid}/${file.name}')
-      const userPath = `${focus}/user_${session.user.id}/${uuidv4()}`; // Matches policy: path[1] = 'phase1a', path[2] = 'user_<uid>'
-      const urls: string[] = [];
+      const fileUrls: string[] = [];
+      const uniqueId = uuidv4();
+      const userId = session?.user?.id || 'guest'; // Fallback for guest (e.g., Phase 1B)
 
       for (const file of files) {
-        const filePath = `${userPath}/${file.name}`;
-        const { error: uploadErr } = await supabase.storage
+        const path = `${focus}/user_${userId}/${uniqueId}/${file.name}`; // RLS-aligned
+        const { error: uploadError } = await supabase.storage
           .from('enki-storage')
-          .upload(filePath, file);
+          .upload(path, file);
 
-        if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-        // Get signed URL for parse (private bucket)
         const { data: { signedUrl } } = await supabase.storage
           .from('enki-storage')
-          .createSignedUrl(filePath, 3600); // 1hr expiry
+          .createSignedUrl(path, 60); // 60s expiry for parse
 
         if (!signedUrl) throw new Error('Signed URL failed');
-        urls.push(signedUrl);
+        fileUrls.push(signedUrl);
       }
 
-      // Parse (chained in ai-parse.ts; pass userId)
-      const parsed = await parseFiles(urls, { focus: config.focus, userId: session?.user?.id });
+      const parsedResults = await parseFiles(fileUrls, { focus, userId });
 
-      // Aggregate risks (flatten across files)
-      const allRisks = parsed.risks ?? []; // From chained risks
+      const allRisks: string[] = [];
+      const allParsed: Record<string, unknown>[] = [];
+
+      for (const result of parsedResults) {
+        if (result.error_msg) {
+          throw new Error(result.error_msg);
+        }
+        allRisks.push(...(result.risks || []));
+        allParsed.push(result);
+      }
 
       setRisks(allRisks);
-      setParsedEssentials(parsed); // Full essentials
+
+      // Filter essentials based on config (e.g., Phase 1A fields)
+      const parsed = allParsed[0] || {}; // Assume single for now; extend for multi
       const filteredEssentials = extraParsedFields 
-  ? Object.fromEntries(Object.entries(parsed).filter(([key]) => extraParsedFields.includes(key))) 
-  : parsed;
-setParsedEssentials(filteredEssentials); // Now filters to config fields (e.g., for Phase 1A display)
+        ? Object.fromEntries(Object.entries(parsed).filter(([key]) => extraParsedFields.includes(key))) 
+        : parsed;
+      setParsedEssentials(filteredEssentials); // Now filters to config fields (e.g., for Phase 1A display)
       // Generate (custom or default)
       let generated: string[];
       if (onGenerateCustom) {

@@ -24,26 +24,40 @@ async function fetchBuckets(): Promise<Record<string, unknown>[]> {
 }
 
 async function fetchTables(): Promise<string[]> {
-  const { data, error } = await supabase.rpc('get_tables');
+  const { data, error } = await supabase.rpc('get_tables', { schema_name: 'public' });  // UPDATED: Added schema_name for public schema
   if (error) throw error;
   return data as string[];
 }
 
 async function fetchColumns(table: string): Promise<string[]> {
-  const { data, error } = await supabase.rpc('get_columns_for_table', { table_name: table });  // Corrected name and param
+  const { data, error } = await supabase.rpc('get_columns', { schema_name: 'public', table_name: table });  // UPDATED: Added schema_name for public schema
   if (error) throw error;
   return data as string[];
 }
 
 async function fetchRlsPolicies(table: string): Promise<Record<string, unknown>[]> {
-  const { data, error } = await supabase.rpc('get_rls_policies_for_table', { table_name: table });  // Corrected name and param
+  const { data, error } = await supabase.rpc('get_rls_policies_for_table', { table_name: table });  // UPDATED: Removed schema_name per hint (expects only table_name)
   if (error) throw error;
   return data as Record<string, unknown>[];
 }
 
+interface SupabaseConfig {  // NEW: Interface for config to resolve 'unknown' type errors
+  buckets: Record<string, {
+    structure: string | null;
+    permissions: string;
+    rls_policies: Record<string, unknown>[];
+  }>;
+  tables: Record<string, {
+    columns: string[];
+    rls_policies: Record<string, unknown>[];
+  }>;
+  last_updated: string;
+  changes: unknown[];
+}
+
 async function exportSchema() {
   try {
-    const config: Record<string, unknown> = {
+    const config: SupabaseConfig = {  // UPDATED: Typed as SupabaseConfig
       buckets: {},
       tables: {},
       last_updated: new Date().toISOString(),

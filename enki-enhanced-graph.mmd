@@ -3,6 +3,7 @@ graph TD
   route_ts -->|import w7| lib_ai-actions
   route_ts -->|call w8| parseFilesAction
   page_tsx -->|import w5| react
+  page_tsx -->|import w5| next_link
   page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_alert
@@ -14,7 +15,16 @@ graph TD
   page_tsx -->|import w5| lucide-react
   page_tsx -->|import w5| react-hot-toast
   page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|call w8| logout
+  page_tsx -->|import w5| react
+  page_tsx -->|import w5| next_navigation
+  page_tsx -->|import w7| lib_use-auth
+  page_tsx -->|import w5| components_ui_card
+  page_tsx -->|import w5| components_ui_button
+  page_tsx -->|import w5| components_ui_alert
+  page_tsx -->|import w5| components_ui_table
+  page_tsx -->|import w5| components_ui_input
+  page_tsx -->|import w5| react-hot-toast
+  page_tsx -->|import w5| next_dynamic
   layout_tsx -->|import w5| next
   layout_tsx -->|import w5| next_font_google
   layout_tsx -->|import w5| components_auth-wrapper
@@ -35,148 +45,28 @@ graph TD
   page_tsx -->|import w5| react-hot-toast
   page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w7| lib_use-auth
-  page_tsx -->|call w8| import
+  page_tsx -->|import w7| lib_ai-actions
   page_tsx -->|call w8| parseFilesAction
+  page_tsx -->|import w7| lib_phase-hook
+  page_tsx -->|import w5| components_phase-layout
+  page_tsx -->|import w7| lib_phase-config
+  page_tsx -->|import w5| react-hot-toast
+  page_tsx -->|import w5| components_ui_button
+  page_tsx -->|import w7| lib_use-auth
+  page_tsx -->|import w5| @supabase_supabase-js
+  page_tsx -->|import w5| next_navigation
+  page_tsx -->|import w7| lib_supabase
+  page_tsx -->|import w5| react
   page_tsx -->|import w5| react
   page_tsx -->|import w5| next_navigation
   page_tsx -->|import w7| lib_supabase
+  page_tsx -->|import w5| @supabase_supabase-js
+  page_tsx -->|import w5| @supabase_storage-js
+  page_tsx -->|import w5| components_forms_upload-zone
+  page_tsx -->|import w5| react-hot-toast
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|import w5| uuid
-  page_tsx -->|call w8| parseFiles
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|import w5| uuid
-  page_tsx -->|call w8| parseFiles
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|import w5| uuid
-  page_tsx -->|call w8| parseFiles
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_card
-  page_tsx -->|import w5| components_ui_alert
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w7| lib_ai-parse
-  page_tsx -->|import w7| lib_ai-generate
-  page_tsx -->|import w5| lucide-react
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| generateFromRisks
-  page_tsx -->|import w5| react
-  page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w7| lib_supabase
-  page_tsx -->|import w5| components_forms_upload-zone
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|import w5| components_ui_card
   auth-wrapper_tsx -->|import w5| react
   auth-wrapper_tsx -->|import w5| next_navigation
   auth-wrapper_tsx -->|import w7| lib_supabase
@@ -249,6 +139,7 @@ graph TD
   phase-hook_ts -->|import w7| lib_ai-generate
   phase-hook_ts -->|import w5| react-hot-toast
   phase-hook_ts -->|import w5| uuid
+  phase-hook_ts -->|import w5| @supabase_supabase-js
   phase-hook_ts -->|call w8| parseFiles
   phase-hook_ts -->|call w8| onGenerateCustom
   phase-hook_ts -->|call w8| generateFromRisks
@@ -261,30 +152,14 @@ graph TD
   utils_ts -->|import w5| clsx
   utils_ts -->|import w5| tailwind-merge
   next_config_ts -->|import w5| next
-  test-summary_ts -->|import w7| lib_ai-generate_ts
   route_ts["route_ts (misc, ext) - app/api/parse/route...."]
   page_tsx["page_tsx (misc, ext) - app/dashboard/page.t..."]
+  page_tsx["page_tsx (misc, ext) - app/dev/page.tsx (UP..."]
   layout_tsx["layout_tsx (misc, ext) - NEW: For global toas..."]
   page_tsx["page_tsx (misc, ext) - app/page.tsx (UPDATE..."]
   page_tsx["page_tsx (misc, ext) - app/phase1a/page.tsx..."]
-  page_tsx["page_tsx (misc, ext) - Client component for..."]
-  page_tsx["page_tsx (misc, ext) - Reuse from Phase 1B..."]
-  page_tsx["page_tsx (misc, ext) - Fixed: Added CardDes..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Upload to storage
- ..."]
-  page_tsx["page_tsx (misc, ext) - Client component for..."]
+  page_tsx["page_tsx (misc, ext) - app/phase1b/page.tsx..."]
+  page_tsx["page_tsx (misc, ext) - app/test-storage/pag..."]
   auth-wrapper_tsx["auth-wrapper_tsx (misc, ext) - components/auth-wrap..."]
   upload-zone_tsx["upload-zone_tsx (misc, ext) - Client component for..."]
   header_tsx["header_tsx (misc, ext) - components/layout/he..."]
@@ -300,10 +175,12 @@ graph TD
   jest_setup_ts["jest_setup_ts (misc, ext) - No description found..."]
   ai-calls_ts["ai-calls_ts (misc, ext) - lib/ai-actions/ai-ca..."]
   error-utils_ts["error-utils_ts (misc, ext) - lib/ai-actions/error..."]
+  pdf-parse_d_ts["pdf-parse_d_ts (misc, ext) - NEW FILE: lib/ai-act..."]
   pdf-utils_ts["pdf-utils_ts (misc, ext) - lib/ai-actions/pdf-u..."]
   storage-utils_ts["storage-utils_ts (misc, ext) - lib/ai-actions/stora..."]
   ai-actions_ts["ai-actions_ts (misc, ext) - lib/ai-actions.ts (r..."]
-  ai-generate_ts["ai-generate_ts (misc, ext) - lib/ai-generate.ts (..."]
+  ai-generate_ts["ai-generate_ts (misc, ext) - lib/ai-generate.ts
+..."]
   ai-parse_ts["ai-parse_ts (misc, ext) - lib/ai-parse.ts (upd..."]
   phase-config_ts["phase-config_ts (misc, ext) - lib/phase-config.ts ..."]
   phase-hook_ts["phase-hook_ts (misc, ext) - lib/phase-hook.ts (U..."]
@@ -316,4 +193,3 @@ graph TD
   next-env_d_ts["next-env_d_ts (misc, ext) - <reference types="ne..."]
   next_config_ts["next_config_ts (config, ext) - @type {import('next'..."]
   tailwind_config_ts["tailwind_config_ts (misc, ext) - @type {import('tailw..."]
-  test-summary_ts["test-summary_ts (misc, ext) - No description found..."]

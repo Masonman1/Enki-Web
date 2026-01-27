@@ -166,13 +166,34 @@
   "tables": {
     "job_contacts": {
       "columns": [
-        "id",
-        "job_id",
-        "contact_id",
-        "role_override",
-        "notes",
-        "created_at",
-        "updated_at"
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "job_id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "contact_id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "role_override",
+          "data_type": "text"
+        },
+        {
+          "column_name": "notes",
+          "data_type": "text"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        }
       ],
       "rls_policies": [
         {
@@ -189,14 +210,38 @@
     },
     "risk_triggers": {
       "columns": [
-        "id",
-        "trigger_name",
-        "description",
-        "severity",
-        "patterns",
-        "clause_template",
-        "created_at",
-        "updated_at"
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "trigger_name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "description",
+          "data_type": "text"
+        },
+        {
+          "column_name": "severity",
+          "data_type": "text"
+        },
+        {
+          "column_name": "patterns",
+          "data_type": "jsonb"
+        },
+        {
+          "column_name": "clause_template",
+          "data_type": "text"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        }
       ],
       "rls_policies": [
         {
@@ -243,23 +288,74 @@
     },
     "jobs": {
       "columns": [
-        "id",
-        "user_id",
-        "contract_number",
-        "contract_amount",
-        "constructor_name",
-        "constructor_address",
-        "project_name",
-        "project_address",
-        "owner_name",
-        "owner_address",
-        "architect_name",
-        "architect_address",
-        "scope_of_work",
-        "scope_details_json",
-        "raw_uploads",
-        "created_at",
-        "updated_at"
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "contract_number",
+          "data_type": "text"
+        },
+        {
+          "column_name": "contract_amount",
+          "data_type": "numeric"
+        },
+        {
+          "column_name": "constructor_name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "constructor_address",
+          "data_type": "text"
+        },
+        {
+          "column_name": "project_name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "project_address",
+          "data_type": "text"
+        },
+        {
+          "column_name": "owner_name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "owner_address",
+          "data_type": "text"
+        },
+        {
+          "column_name": "architect_name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "architect_address",
+          "data_type": "text"
+        },
+        {
+          "column_name": "scope_of_work",
+          "data_type": "text"
+        },
+        {
+          "column_name": "scope_details_json",
+          "data_type": "jsonb"
+        },
+        {
+          "column_name": "raw_uploads",
+          "data_type": "jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        }
       ],
       "rls_policies": [
         {
@@ -276,12 +372,30 @@
     },
     "job_drafts": {
       "columns": [
-        "id",
-        "user_id",
-        "draft_json",
-        "raw_uploads",
-        "created_at",
-        "updated_at"
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "draft_json",
+          "data_type": "jsonb"
+        },
+        {
+          "column_name": "raw_uploads",
+          "data_type": "jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        }
       ],
       "rls_policies": [
         {
@@ -298,19 +412,58 @@
     },
     "contacts": {
       "columns": [
-        "id",
-        "user_id",
-        "name",
-        "company",
-        "role",
-        "type",
-        "email",
-        "phone",
-        "cell",
-        "address",
-        "notes",
-        "created_at",
-        "updated_at"
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "company",
+          "data_type": "text"
+        },
+        {
+          "column_name": "role",
+          "data_type": "text"
+        },
+        {
+          "column_name": "type",
+          "data_type": "text"
+        },
+        {
+          "column_name": "email",
+          "data_type": "text"
+        },
+        {
+          "column_name": "phone",
+          "data_type": "text"
+        },
+        {
+          "column_name": "cell",
+          "data_type": "text"
+        },
+        {
+          "column_name": "address",
+          "data_type": "text"
+        },
+        {
+          "column_name": "notes",
+          "data_type": "text"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        }
       ],
       "rls_policies": [
         {
@@ -327,11 +480,26 @@
     },
     "dev_logs": {
       "columns": [
-        "id",
-        "user_id",
-        "summaries",
-        "created_at",
-        "updated_at"
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "user_id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "summaries",
+          "data_type": "jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        }
       ],
       "rls_policies": [
         {
@@ -387,6 +555,6 @@
       ]
     }
   },
-  "last_updated": "2026-01-26T17:20:45.496Z",
+  "last_updated": "2026-01-27T15:52:32.463Z",
   "changes": []
 }

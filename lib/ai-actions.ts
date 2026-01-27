@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { extractPdfText, splitPdfByRanges } from '@/lib/ai-actions/pdf-utils'; // Add '@/lib/ai-actions/'
 import { callAiForEssentials, callAiForSplits, callAiForRisks } from '@/lib/ai-actions/ai-calls';
 import { uploadSplitPdfs } from '@/lib/ai-actions/storage-utils'; // Remove updateJobRisks import
-import { createFallbackParsed } from '@/lib/ai-actions/error-utils';
+import { ParsedJob, createFallbackParsed } from '@/lib/ai-actions/error-utils'; // UPDATED: Add ParsedJob import
 
 interface ParsedContract {
   contract_number: string | null;
@@ -25,19 +25,18 @@ interface ParsedSplit {
   [section: string]: string; // e.g., { "schedule": "156-160", "insurance": "45-52" }
 }
 
-interface ParsedJob extends ParsedContract {
-  splits: ParsedSplit;
-  risks: string[]; // Flattened waterproofing risks (e.g., substrate misses)—transient, not stored
-  storage_path: string | null;
-  error_msg?: string; // Optional for fallbacks
-}
+// NEW: ParsedJob now imported from error-utils.ts for type consistency
 
-export async function parseFilesAction(fileUrls: string[], focus?: string, userId?: string): Promise<ParsedJob[]> {
+export async function parseFilesAction(fileUrls: string[], focus?: string, userId?: string) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_KEY || '',
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  const effectiveUserId = userId || 'guest'; // Fallback for guest mode (e.g., Phase 1B)
+
   const results: ParsedJob[] = [];
-  console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Undefined');
-  console.log('SUPABASE_SERVICE_KEY:', process.env.SUPABASE_SERVICE_KEY ? 'Set (length: ' + process.env.SUPABASE_SERVICE_KEY.length + ')' : 'Undefined');
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!); // Use correct keys from .env.local
-  const effectiveUserId = userId || 'extract-from-session'; // Use passed or fallback; renamed to avoid conflict
 
   for (const url of fileUrls) {
     try {

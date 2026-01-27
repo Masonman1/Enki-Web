@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js'; // NEW: Add AuthChangeEvent for typing
 import toast from 'react-hot-toast'; // Assuming imported for error UI; add if needed
 
 export function useAuth() {
@@ -28,18 +28,10 @@ export function useAuth() {
           console.log('Initial session:', session ? 'Present' : 'Null');
           setSession(session);
           setLoading(false);
-
-          const path = window.location.pathname;
-          if (!session && !path.startsWith('/phase1b') && path !== '/') {
-            console.log('Initiating redirect to / from path:', path);
-            router.push('/');
-          } else if (path === '/') {
-            console.log('Redirect skipped: already at /');
-          }
         }
       } catch (err) {
-        console.error('getSession error:', err);
-        toast.error('Auth init failed - check connection');
+        console.error('Session init error:', err);
+        toast.error('Session failed - check connection');
         if (isMounted) setLoading(false);
       }
     }
@@ -48,7 +40,7 @@ export function useAuth() {
 
     if (!supabase) return () => {}; // Early cleanup if no client
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, newSession: Session | null) => {
       if (isMounted) {
         setSession(newSession);
         const path = window.location.pathname;
