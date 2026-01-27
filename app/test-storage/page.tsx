@@ -1,95 +1,96 @@
-'use client'; // Client component for hooks and interactivity
+// app/test-storage/page.tsx (UPDATED: Correct import for FileObject from storage-js; TS fix)
 
-import { useState, useEffect } from 'react'; // For state and session effect
-import { useRouter } from 'next/navigation'; // For navigation/redirect
-import { useSupabase } from '@/lib/supabase'; // Singleton hook for Supabase client
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSupabase } from '@/lib/supabase';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js'; // For auth typing
+import { FileObject } from '@supabase/storage-js'; // Correct import for FileObject
 import UploadZone from '@/components/forms/upload-zone'; // Reuse for drag-drop
 import toast from "react-hot-toast"; // For success/error alerts
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // Fixed: Missing imports for shadcn/ui components
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // shadcn/ui components
+import { Button } from '@/components/ui/button'; // For download/upload actions
+import { Alert, AlertDescription } from '@/components/ui/alert'; // For error display (add if not already)
 
 export default function TestStorage() {
-  const [files, setFiles] = useState<File[]>([]); // State for uploaded files
-  const [loading, setLoading] = useState(false); // State for loading indicator
-  const [session, setSession] = useState(null); // State for Supabase session
-  const router = useRouter(); // For navigation/redirect
-  const supabase = useSupabase(); // Supabase client
+  const supabase = useSupabase();
+  const router = useRouter();
+  const [session, setSession] = useState<Session | null>(null);
+  const [fileUrls, setFileUrls] = useState<string[]>([]); // For downloaded URLs
+  const [error, setError] = useState<string | null>(null);
 
-  // UseEffect to fetch session and handle auth changes (aligned with Phase 1 auth pattern)
   useEffect(() => {
-    const getSession = async () => {
+    async function getSession() {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      if (!session) router.push('/'); // Redirect if not authenticated
-    };
+    }
     getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => setSession(session));
+
     return () => authListener.subscription.unsubscribe();
   }, [supabase, router]);
 
-  if (!session) return <div>Loading session...</div>; // Handle null session during load
-
-  // Handle upload function (minimal: upload to bucket with metadata, debug logs)
-  const handleUpload = async (uploadedFiles: File[]) => {
-    setFiles(uploadedFiles);
-    setLoading(true);
+  const handleUpload = async (files: File[]) => {
+    if (!session) {
+      setError('Login required for uploads');
+      return;
+    }
     try {
-      // Debug: Log session uid for RLS/ownership check
-      console.log('Debug: User ID:', session.user.id);
+      for (const file of files) {
+        const path = `test/${session.user.id}/${file.name}`; // RLS-aligned path
+        const { error: uploadError } = await supabase.storage.from('enki-storage').upload(path, file);
+        if (uploadError) throw uploadError;
+      }
+      toast.success('Upload successful!');
+    } catch (err) {
+      setError('Upload failed: ' + (err as Error).message);
+    }
+  };
 
-      // Upload loop for multiple files (aligned with Phase 1 pattern)
-      const uploadPromises = uploadedFiles.map(async (file) => {
-        const safeName = file.name.replace(/[\[\]]/g, '').replace(/\s/g, '_'); // Sanitize file name
-        const userFolder = `user_${session.user.id}`; // User folder for ownership
-        const path = `jobs/${userFolder}/phase1b/${safeName}`; // Path structure (change here to test different formats)
-        console.log('Debug: Upload path:', path); // Debug: Verify path
-        console.log('Debug: File type:', file.type); // Debug: Verify contentType
-
-        const { data, error: uploadError } = await supabase.storage
-          .from('enki-storage') // Bucket name (change here to test different buckets)
-          .upload(path, file, {
-            upsert: true, // Allow overwrite if file exists
-            contentType: file.type, // Auto-set MIME type
-            metadata: { phase: '1B', type: 'essentials', jobId: session.user.id } // Metadata for DB linking (blueprint-aligned)
-          });
-
-        if (uploadError) {
-          console.error('Debug: Upload Error Details:', uploadError.message, uploadError.status, uploadError.body); // Full error log
-          throw uploadError;
-        }
-
-        console.log('Debug: Upload Success Data:', data); // Debug: Confirm response
-        return data.path;
-      });
-      await Promise.all(uploadPromises);
-      toast.success('Upload successful! Check console for details.');
-    } catch (error) {
-      console.error('Detailed Supabase Error:', error); // Log full object for body
-      if (error.body) console.log('Error Body:', error.body); // Specific for 400 message
-      toast.error('Upload failed: ' + (error.message || 'Check console'));
-    } finally {
-      setLoading(false);
+  const handleDownload = async () => {
+    if (!session) {
+      setError('Login required for downloads');
+      return;
+    }
+    try {
+      const { data } = await supabase.storage.from('enki-storage').list(`test/${session.user.id}`);
+      const urls = await Promise.all(
+        (data ?? []).map(async (file: FileObject) => {  // Type 'file' as FileObject
+          const { data: signed } = await supabase.storage.from('enki-storage').createSignedUrl(`test/${session.user.id}/${file.name}`, 60);
+          return signed?.signedUrl || '';
+        })
+      );
+      setFileUrls(urls.filter(Boolean));
+      toast.success('Files listed!');
+    } catch (err) {
+      setError('Download list failed: ' + (err as Error).message);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <Card className="w-[450px]">
+    <div className="container mx-auto p-4">
+      <Card>
         <CardHeader>
-          <CardTitle>Test Storage Upload</CardTitle>
-          <CardDescription>Drag-drop PDF to test upload to Supabase storage.</CardDescription>
+          <CardTitle>Test Storage Page</CardTitle>
+          <CardDescription>Test Supabase storage uploads/downloads with RLS (e.g., for Phase 1A splits)</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
+          {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
           <UploadZone onUpload={handleUpload} />
-          {loading && <div>Loading...</div>} {/* Loading indicator */}
-          {files.length > 0 && (
-            <div>
-              <h3 className="font-semibold">Selected Files:</h3>
-              <ul className="list-disc pl-5">
-                {files.map((file, idx) => <li key={idx}>{file.name}</li>)}
+          <Button onClick={handleDownload} className="mt-4">List & Get Signed URLs</Button>
+          {fileUrls.length > 0 && (
+            <div className="mt-4">
+              <h3>Downloaded File URLs (valid 60s):</h3>
+              <ul>
+                {fileUrls.map((url, idx) => (
+                  <li key={idx}><a href={url} target="_blank" rel="noopener noreferrer">Download File {idx + 1}</a></li>
+                ))}
               </ul>
             </div>
           )}
+          <Button variant="outline" onClick={() => router.push('/dashboard')} className="mt-6">Back to Dashboard</Button>
         </CardContent>
       </Card>
     </div>
