@@ -13,11 +13,20 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import toast from 'react-hot-toast';
 import { useTriggers } from '@/lib/use-triggers';
 
+interface Trigger {
+  id: string;
+  trigger_name: string;
+  description: string;
+  patterns: object;
+  clause_template: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function AdminTriggers() {
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const router = useRouter();
   const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger } = useTriggers();
-  const [isChecking, setIsChecking] = useState(true);
   const [mode, setMode] = useState<'add' | 'edit'>('add');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -29,22 +38,10 @@ export default function AdminTriggers() {
   });
 
   useEffect(() => {
-    if (session === null) return;
-    if (!session || session.user.user_metadata?.role !== 'admin') {
-      router.push('/dashboard');
-    } else {
-      // Use setTimeout to make setState async and avoid cascading renders
-      setTimeout(() => setIsChecking(false), 0);
+    if (!authLoading && !session) {
+      router.push('/');
     }
-  }, [session, router]);
-
-  if (isChecking) {
-    return <div className="flex min-h-screen items-center justify-center">Checking access...</div>;
-  }
-
-  if (triggersLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading triggers...</div>;
-  }
+  }, [authLoading, session, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -99,12 +96,12 @@ export default function AdminTriggers() {
     setEditingId(null);
   };
 
-  const handleEdit = (trigger: any) => {
+  const handleEdit = (trigger: Trigger) => {
     setForm({
       trigger_desc: trigger.description,
       clause_desc: trigger.clause_template,
       trigger_rewrite: '',
-      clause_rewrite: trigger.clause_template,
+      clause_rewrite: '',
       suggested_name: trigger.trigger_name,
     });
     setMode('edit');
@@ -120,6 +117,14 @@ export default function AdminTriggers() {
       console.error(err);
     }
   };
+
+  if (authLoading || triggersLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (!session) {
+    return null; // Redirect handled in effect; null to avoid flash
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -151,8 +156,8 @@ export default function AdminTriggers() {
       </form>
       <div className="overflow-y-auto max-h-[400px]">
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Trigger Desc</TableHead><TableHead>Clause Template</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
-          <TableBody>{triggers.map((t) => <TableRow key={t.id}><TableCell>{t.trigger_name}</TableCell><TableCell>{t.description}</TableCell><TableCell>{t.clause_template}</TableCell><TableCell><Button variant="ghost" onClick={() => handleEdit(t)}>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost">Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Delete</AlertDialogTitle><AlertDialogDescription>Delete '{t.trigger_name}'? This is permanent.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>)}</TableBody>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+          <TableBody>{triggers.map((t) => <TableRow key={t.id}><TableCell>{t.trigger_name}</TableCell><TableCell><Button variant="ghost" onClick={() => handleEdit(t)}>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost">Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Delete</AlertDialogTitle><AlertDialogDescription>Delete &apos;{t.trigger_name}&apos;? This is permanent.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>)}</TableBody>
         </Table>
       </div>
     </div>

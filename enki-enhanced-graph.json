@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-27T19:32:49.101Z",
+  "generated_at": "2026-01-28T01:25:34.604Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -25,6 +25,22 @@
   },
   "nodes": [
     {
+      "id": "page_tsx",
+      "category": "misc",
+      "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\n\r\nimport { useState, useEffect } from 'react';\r\nimport {...",
+      "exports": [],
+      "lines": 165,
+      "external": true
+    },
+    {
+      "id": "route_ts",
+      "category": "misc",
+      "desc": "app/api/ai-rewrite/route.ts\r\nimport { NextRequest, NextResponse } from 'next/server';\r\n\r\nexport asyn...",
+      "exports": [],
+      "lines": 19,
+      "external": true
+    },
+    {
       "id": "route_ts",
       "category": "misc",
       "desc": "app/api/parse/route.ts (enhanced with logs)\r\nimport { NextRequest, NextResponse } from 'next/server'...",
@@ -38,14 +54,6 @@
       "desc": "app/dashboard/page.tsx (SIMPLIFIED: Removed chat summaries/dev_logs features for Phase 1 focus; move...",
       "exports": [],
       "lines": 68,
-      "external": true
-    },
-    {
-      "id": "page_tsx",
-      "category": "misc",
-      "desc": "app/dev/page.tsx (UPDATED: Valid mockGraph + dynamic Mermaid wrapper for TS/build fix)\r\n// Additiona...",
-      "exports": [],
-      "lines": 96,
       "external": true
     },
     {
@@ -125,6 +133,14 @@
       "external": true
     },
     {
+      "id": "alert-dialog_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 197,
+      "external": true
+    },
+    {
       "id": "alert_tsx",
       "category": "misc",
       "desc": "No description found",
@@ -137,7 +153,7 @@
       "category": "misc",
       "desc": "No description found",
       "exports": [],
-      "lines": 63,
+      "lines": 65,
       "external": true
     },
     {
@@ -162,6 +178,14 @@
       "desc": "No description found",
       "exports": [],
       "lines": 25,
+      "external": true
+    },
+    {
+      "id": "select_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 191,
       "external": true
     },
     {
@@ -350,6 +374,16 @@
       "external": true
     },
     {
+      "id": "use-triggers_ts",
+      "category": "misc",
+      "desc": "lib/use-triggers.ts\r\n'use client';\r\n\r\nimport { useState, useEffect, useCallback } from 'react'; // A...",
+      "exports": [
+        "useTriggers"
+      ],
+      "lines": 81,
+      "external": true
+    },
+    {
       "id": "utils_ts",
       "category": "misc",
       "desc": "No description found",
@@ -372,7 +406,7 @@
       "category": "config",
       "desc": "@type {import('next').NextConfig}...",
       "exports": [],
-      "lines": 30,
+      "lines": 26,
       "external": true
     },
     {
@@ -385,6 +419,96 @@
     }
   ],
   "edges": [
+    {
+      "source": "page_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-auth",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "next_navigation",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_input",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_label",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_table",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_textarea",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_alert-dialog",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-triggers",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "insertTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "updateTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "deleteTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "route_ts",
+      "target": "next_server",
+      "type": "import",
+      "weight": 5
+    },
     {
       "source": "route_ts",
       "target": "next_server",
@@ -456,54 +580,6 @@
       "target": "authLogout",
       "type": "call",
       "weight": 8
-    },
-    {
-      "source": "page_tsx",
-      "target": "react",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "next_navigation",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "lib_use-auth",
-      "type": "import",
-      "weight": 7
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_ui_card",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_ui_button",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_ui_table",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "react-hot-toast",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "next_dynamic",
-      "type": "import",
-      "weight": 5
     },
     {
       "source": "layout_tsx",
@@ -854,6 +930,30 @@
       "weight": 5
     },
     {
+      "source": "alert-dialog_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "alert-dialog_tsx",
+      "target": "@radix-ui_react-alert-dialog",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "alert-dialog_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "alert-dialog_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
       "source": "alert_tsx",
       "target": "react",
       "type": "import",
@@ -933,6 +1033,30 @@
     },
     {
       "source": "label_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "select_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "select_tsx",
+      "target": "@radix-ui_react-select",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "select_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "select_tsx",
       "target": "lib_utils",
       "type": "import",
       "weight": 7
@@ -1232,6 +1356,24 @@
       "weight": 5
     },
     {
+      "source": "use-triggers_ts",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "use-triggers_ts",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "use-triggers_ts",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
       "source": "utils_ts",
       "target": "clsx",
       "type": "import",
@@ -1251,8 +1393,8 @@
     }
   ],
   "stats": {
-    "nodeCount": 40,
-    "edgeCount": 144,
-    "avgLines": 55.85
+    "nodeCount": 44,
+    "edgeCount": 162,
+    "avgLines": 63.38636363636363
   }
 }
