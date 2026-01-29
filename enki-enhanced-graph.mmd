@@ -8,12 +8,16 @@ graph TD
   page_tsx -->|import w5| components_ui_table
   page_tsx -->|import w5| components_ui_textarea
   page_tsx -->|import w5| components_ui_alert-dialog
+  page_tsx -->|import w5| components_ui_card
+  page_tsx -->|import w5| components_ui_accordion
+  page_tsx -->|import w5| components_ui_switch
+  page_tsx -->|import w5| components_ui_select
+  page_tsx -->|import w5| components_ui_checkbox
   page_tsx -->|import w5| react-hot-toast
   page_tsx -->|import w7| lib_use-triggers
-  page_tsx -->|call w8| insertTrigger
-  page_tsx -->|call w8| updateTrigger
-  page_tsx -->|call w8| deleteTrigger
   route_ts -->|import w5| next_server
+  route_ts -->|import w5| openai
+  route_ts -->|import w7| lib_prompts_trigger-rewrite
   route_ts -->|import w5| next_server
   route_ts -->|import w7| lib_ai-actions
   route_ts -->|call w8| parseFilesAction
@@ -84,6 +88,10 @@ graph TD
   phase-layout_tsx -->|import w5| components_forms_upload-zone
   phase-layout_tsx -->|import w5| next_navigation
   phase-layout_tsx -->|import w5| react-hot-toast
+  accordion_tsx -->|import w5| react
+  accordion_tsx -->|import w5| @radix-ui_react-accordion
+  accordion_tsx -->|import w5| lucide-react
+  accordion_tsx -->|import w7| lib_utils
   alert-dialog_tsx -->|import w5| react
   alert-dialog_tsx -->|import w5| @radix-ui_react-alert-dialog
   alert-dialog_tsx -->|import w7| lib_utils
@@ -97,6 +105,10 @@ graph TD
   button_tsx -->|import w7| lib_utils
   card_tsx -->|import w5| react
   card_tsx -->|import w7| lib_utils
+  checkbox_tsx -->|import w5| react
+  checkbox_tsx -->|import w5| @radix-ui_react-checkbox
+  checkbox_tsx -->|import w5| lucide-react
+  checkbox_tsx -->|import w7| lib_utils
   input_tsx -->|import w5| react
   input_tsx -->|import w7| lib_utils
   label_tsx -->|import w5| react
@@ -106,6 +118,9 @@ graph TD
   select_tsx -->|import w5| @radix-ui_react-select
   select_tsx -->|import w5| lucide-react
   select_tsx -->|import w7| lib_utils
+  switch_tsx -->|import w5| react
+  switch_tsx -->|import w5| @radix-ui_react-switch
+  switch_tsx -->|import w7| lib_utils
   table_tsx -->|import w5| react
   table_tsx -->|import w7| lib_utils
   textarea_tsx -->|import w5| react
@@ -174,13 +189,16 @@ graph TD
   upload-zone_tsx["upload-zone_tsx (misc, ext) - Client component for..."]
   header_tsx["header_tsx (misc, ext) - components/layout/he..."]
   phase-layout_tsx["phase-layout_tsx (misc, ext) - components/phase-lay..."]
+  accordion_tsx["accordion_tsx (misc, ext) - No description found..."]
   alert-dialog_tsx["alert-dialog_tsx (misc, ext) - No description found..."]
   alert_tsx["alert_tsx (misc, ext) - No description found..."]
   button_tsx["button_tsx (misc, ext) - No description found..."]
   card_tsx["card_tsx (misc, ext) - No description found..."]
+  checkbox_tsx["checkbox_tsx (misc, ext) - No description found..."]
   input_tsx["input_tsx (misc, ext) - No description found..."]
   label_tsx["label_tsx (misc, ext) - No description found..."]
   select_tsx["select_tsx (misc, ext) - No description found..."]
+  switch_tsx["switch_tsx (misc, ext) - No description found..."]
   table_tsx["table_tsx (misc, ext) - No description found..."]
   textarea_tsx["textarea_tsx (misc, ext) - No description found..."]
   jest_config_ts["jest_config_ts (misc, ext) - Updated: Embed ts-je..."]
@@ -199,6 +217,7 @@ graph TD
   essentials_ts["essentials_ts (misc, ext) - lib/prompts/phase1a/..."]
   risk-prompts_ts["risk-prompts_ts (misc, ext) - lib/prompts/phase1a/..."]
   split-prompts_ts["split-prompts_ts (misc, ext) - lib/prompts/phase1a/..."]
+  trigger-rewrite_ts["trigger-rewrite_ts (misc, ext) - lib/prompts/trigger-..."]
   supabase_ts["supabase_ts (misc, ext) - Global singleton ins..."]
   use-auth_ts["use-auth_ts (misc, ext) - lib/use-auth.ts (UPD..."]
   use-triggers_ts["use-triggers_ts (misc, ext) - lib/use-triggers.ts..."]

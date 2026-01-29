@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-28T01:25:34.604Z",
+  "generated_at": "2026-01-29T20:52:02.708Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -29,15 +29,15 @@
       "category": "misc",
       "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\n\r\nimport { useState, useEffect } from 'react';\r\nimport {...",
       "exports": [],
-      "lines": 165,
+      "lines": 262,
       "external": true
     },
     {
       "id": "route_ts",
       "category": "misc",
-      "desc": "app/api/ai-rewrite/route.ts\r\nimport { NextRequest, NextResponse } from 'next/server';\r\n\r\nexport asyn...",
+      "desc": "app/api/ai-rewrite/route.ts\r\nimport { NextRequest, NextResponse } from 'next/server';\r\nimport OpenAI...",
       "exports": [],
-      "lines": 19,
+      "lines": 76,
       "external": true
     },
     {
@@ -133,6 +133,14 @@
       "external": true
     },
     {
+      "id": "accordion_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 67,
+      "external": true
+    },
+    {
       "id": "alert-dialog_tsx",
       "category": "misc",
       "desc": "No description found",
@@ -165,6 +173,14 @@
       "external": true
     },
     {
+      "id": "checkbox_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 33,
+      "external": true
+    },
+    {
       "id": "input_tsx",
       "category": "misc",
       "desc": "No description found",
@@ -186,6 +202,14 @@
       "desc": "No description found",
       "exports": [],
       "lines": 191,
+      "external": true
+    },
+    {
+      "id": "switch_tsx",
+      "category": "misc",
+      "desc": "No description found",
+      "exports": [],
+      "lines": 36,
       "external": true
     },
     {
@@ -353,6 +377,17 @@
       "external": true
     },
     {
+      "id": "trigger-rewrite_ts",
+      "category": "misc",
+      "desc": "lib/prompts/trigger-rewrite.ts\r\nexport interface ClausePromptParams {\r\n  triggerContext: string;   /...",
+      "exports": [
+        "ClausePromptParams",
+        "composeClausePrompt"
+      ],
+      "lines": 33,
+      "external": true
+    },
+    {
       "id": "supabase_ts",
       "category": "misc",
       "desc": "Global singleton instance (lazy-initialized)\r\nlet supabaseSingleton: ReturnType<typeof createBrowser...",
@@ -475,6 +510,36 @@
     },
     {
       "source": "page_tsx",
+      "target": "components_ui_card",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_accordion",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_switch",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_select",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_checkbox",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
       "target": "react-hot-toast",
       "type": "import",
       "weight": 5
@@ -486,28 +551,22 @@
       "weight": 7
     },
     {
-      "source": "page_tsx",
-      "target": "insertTrigger",
-      "type": "call",
-      "weight": 8
-    },
-    {
-      "source": "page_tsx",
-      "target": "updateTrigger",
-      "type": "call",
-      "weight": 8
-    },
-    {
-      "source": "page_tsx",
-      "target": "deleteTrigger",
-      "type": "call",
-      "weight": 8
-    },
-    {
       "source": "route_ts",
       "target": "next_server",
       "type": "import",
       "weight": 5
+    },
+    {
+      "source": "route_ts",
+      "target": "openai",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "route_ts",
+      "target": "lib_prompts_trigger-rewrite",
+      "type": "import",
+      "weight": 7
     },
     {
       "source": "route_ts",
@@ -930,6 +989,30 @@
       "weight": 5
     },
     {
+      "source": "accordion_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "accordion_tsx",
+      "target": "@radix-ui_react-accordion",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "accordion_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "accordion_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
       "source": "alert-dialog_tsx",
       "target": "react",
       "type": "import",
@@ -1008,6 +1091,30 @@
       "weight": 7
     },
     {
+      "source": "checkbox_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "checkbox_tsx",
+      "target": "@radix-ui_react-checkbox",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "checkbox_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "checkbox_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
       "source": "input_tsx",
       "target": "react",
       "type": "import",
@@ -1057,6 +1164,24 @@
     },
     {
       "source": "select_tsx",
+      "target": "lib_utils",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "switch_tsx",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "switch_tsx",
+      "target": "@radix-ui_react-switch",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "switch_tsx",
       "target": "lib_utils",
       "type": "import",
       "weight": 7
@@ -1393,8 +1518,8 @@
     }
   ],
   "stats": {
-    "nodeCount": 44,
-    "edgeCount": 162,
-    "avgLines": 63.38636363636363
+    "nodeCount": 48,
+    "edgeCount": 177,
+    "avgLines": 64.83333333333333
   }
 }
