@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-29T20:52:02.708Z",
+  "generated_at": "2026-01-30T17:14:51.383Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -29,7 +29,7 @@
       "category": "misc",
       "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\n\r\nimport { useState, useEffect } from 'react';\r\nimport {...",
       "exports": [],
-      "lines": 262,
+      "lines": 421,
       "external": true
     },
     {
@@ -37,7 +37,7 @@
       "category": "misc",
       "desc": "app/api/ai-rewrite/route.ts\r\nimport { NextRequest, NextResponse } from 'next/server';\r\nimport OpenAI...",
       "exports": [],
-      "lines": 76,
+      "lines": 94,
       "external": true
     },
     {
@@ -409,6 +409,16 @@
       "external": true
     },
     {
+      "id": "use-standards_ts",
+      "category": "misc",
+      "desc": "lib/use-standards.ts\r\n'use client';\r\n\r\nimport { useState, useEffect, useCallback } from 'react';\r\nim...",
+      "exports": [
+        "useStandards"
+      ],
+      "lines": 82,
+      "external": true
+    },
+    {
       "id": "use-triggers_ts",
       "category": "misc",
       "desc": "lib/use-triggers.ts\r\n'use client';\r\n\r\nimport { useState, useEffect, useCallback } from 'react'; // A...",
@@ -522,12 +532,6 @@
     },
     {
       "source": "page_tsx",
-      "target": "components_ui_switch",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
       "target": "components_ui_select",
       "type": "import",
       "weight": 5
@@ -540,15 +544,63 @@
     },
     {
       "source": "page_tsx",
+      "target": "lib_use-triggers",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
+      "target": "lib_use-standards",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "page_tsx",
       "target": "react-hot-toast",
       "type": "import",
       "weight": 5
     },
     {
       "source": "page_tsx",
-      "target": "lib_use-triggers",
-      "type": "import",
-      "weight": 7
+      "target": "fetch",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "updateTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "insertTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "deleteTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "updateStandard",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "insertStandard",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
+      "target": "deleteStandard",
+      "type": "call",
+      "weight": 8
     },
     {
       "source": "route_ts",
@@ -1481,6 +1533,24 @@
       "weight": 5
     },
     {
+      "source": "use-standards_ts",
+      "target": "react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "use-standards_ts",
+      "target": "lib_supabase",
+      "type": "import",
+      "weight": 7
+    },
+    {
+      "source": "use-standards_ts",
+      "target": "react-hot-toast",
+      "type": "import",
+      "weight": 5
+    },
+    {
       "source": "use-triggers_ts",
       "target": "react",
       "type": "import",
@@ -1518,8 +1588,8 @@
     }
   ],
   "stats": {
-    "nodeCount": 48,
-    "edgeCount": 177,
-    "avgLines": 64.83333333333333
+    "nodeCount": 49,
+    "edgeCount": 187,
+    "avgLines": 68.79591836734694
   }
 }

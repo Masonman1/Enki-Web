@@ -10,252 +10,411 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // NEW: For grouping
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'; // NEW: For collapsible standards
-import { Switch } from '@/components/ui/switch'; // NEW: For toggle
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // NEW: For category dropdown
-import { Checkbox } from '@/components/ui/checkbox'; // FIXED: Missing import for checkboxes in table
-import toast from 'react-hot-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useTriggers } from '@/lib/use-triggers';
+import { useStandards } from '@/lib/use-standards';
+import toast from 'react-hot-toast';
 
-interface Trigger {
-  id: string;
-  trigger_name: string;
-  description: string;
-  patterns: object;
-  clause_template: string;
-  created_at: string;
-  updated_at: string;
+function snakeToTitle(snake: string) {
+  return snake.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// Mock standards data for appearance (replace with Supabase fetch later)
-const mockStandards = [
-  { id: '1', code: 'ASTM C920', description: 'Classifies elastomeric joint sealants; covers compatibility, adhesion testing, and substrate prep for proper bonding.' },
-  { id: '2', code: 'ACI 504R', description: 'Guides concrete joint design and construction to ensure proper sealant performance and minimize prep rework.' },
-  { id: '3', code: 'ICRI CSP 3-4', description: 'Concrete surface profiles for proper cleanliness and texture in prep for coatings and membranes.' },
-  { id: '4', code: 'ASTM D5295', description: 'Guide for evaluating concrete surface moisture before applying waterproofing or coatings.' },
-  { id: '5', code: 'USITC Section 301', description: 'US International Trade Commission guidelines on tariffs and duties, including trade actions on imports like chemicals/materials.' },
-  { id: '6', code: 'SSPC-SP 13', description: 'Surface preparation of concrete for coatings, emphasizing removal of laitance for proper bonding.' },
-  // Add more for scroll test
-];
-
-function snakeToTitle(name: string): string {
-  return name
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
-export default function AdminTriggers() {
+export default function TriggersAdmin() {
   const { session, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger } = useTriggers();
 
-  const [triggerName, setTriggerName] = useState('');
-  const [csiCode, setCsiCode] = useState('');
-  const [scopeKeywords, setScopeKeywords] = useState('');
-  const [scopeApplicability, setScopeApplicability] = useState(''); // NEW: Scope/Applicability field
-  const [isGeneralConditions, setIsGeneralConditions] = useState(true); // NEW: Toggle, default true (scope-specific)
-  const [clauseTitle, setClauseTitle] = useState('');
-  const [clauseCategory, setClauseCategory] = useState(''); // NEW: Select for category
-  const [triggerThreshold, setTriggerThreshold] = useState(''); // NEW: Trigger/Threshold
-  const [protectionsExclusions, setProtectionsExclusions] = useState(''); // NEW: Protections/Exclusions
-  const [receiptConditions, setReceiptConditions] = useState(''); // NEW: Receipt Conditions
-  const [additionalDetails, setAdditionalDetails] = useState(''); // NEW: Additional Details/Remedies
-  const [standardsToConsider, setStandardsToConsider] = useState(''); // NEW: Selected standards (comma-separated)
-  const [selectedStandards, setSelectedStandards] = useState<string[]>([]); // NEW: For checkbox state
+  const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger } = useTriggers();
+  const { standards, loading: standardsLoading, insertStandard, updateStandard, deleteStandard, fetchStandards } = useStandards();
+
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [triggerRewrite, setTriggerRewrite] = useState('');
   const [clauseRewrite, setClauseRewrite] = useState('');
   const [suggestedName, setSuggestedName] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
+
+  const defaultFormData = {
+    title: '',
+    csi_code: '',
+    keywords: '',
+    category: '',
+    threshold: '',
+    exclusions: '',
+    receipt_conditions: '',
+    details: '',
+    selected_standards: [] as string[],
+  };
+
+  const [formData, setFormData] = useState(defaultFormData);
+
+  const [stdForm, setStdForm] = useState({
+    id: '',
+    standard_name: '',
+    description: '',
+    category: '',
+    applicable_to: '',
+  });
+  const [isEditingStd, setIsEditingStd] = useState(false);
+  const [editingStdId, setEditingStdId] = useState<string | null>(null);
+
+  // State for open section (single-toggle)
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setOpenSection((prev) => (prev === section ? null : section));
+  };
 
   useEffect(() => {
-    if (!authLoading && !session) {
-      router.push('/');
+    if (authLoading || !session) {
+      if (!authLoading) router.push('/');
+      return;
     }
-  }, [session, authLoading, router]);
+  }, [authLoading, session, router]);
 
-  if (authLoading || triggersLoading) {
+  if (authLoading || triggersLoading || standardsLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
-  if (!session) {
-    return <div className="flex min-h-screen items-center justify-center">Redirecting...</div>;
-  }
-
-  // Stub for generate (focus on appearance, no function)
-  const generateRewrites = () => {
-    // Placeholder for appearance
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Stub for submit
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleStdChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setStdForm({ ...stdForm, [e.target.name]: e.target.value });
+  };
+
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder
+    try {
+      const body = {
+        ...formData,
+        selected_standards: formData.selected_standards,
+      };
+      const res = await fetch('/api/ai-rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('AI rewrite failed');
+      const { trigger_rewrite, clause_rewrite, suggested_name } = await res.json();
+      setTriggerRewrite(trigger_rewrite);
+      setClauseRewrite(clause_rewrite);
+      setSuggestedName(suggested_name);
+      toast.success('Rewrite generated!');
+    } catch (err) {
+      toast.error('Generate failed');
+      console.error(err);
+    }
   };
 
-  // Stub for edit
-  const handleEdit = (trigger: Trigger) => {
-    // Placeholder
+  const handleCommit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!suggestedName || !clauseRewrite) return toast.error('Generate first');
+    const triggerData = {
+      trigger_name: suggestedName,
+      description: formData.details,
+      patterns: { ...formData },
+      clause_template: clauseRewrite,
+    };
+    try {
+      if (editingId) {
+        await updateTrigger(editingId, triggerData);
+        setEditingId(null);
+      } else {
+        await insertTrigger(triggerData);
+      }
+      handleClear();
+      toast.success('Trigger committed!');
+    } catch (err) {
+      toast.error('Commit failed');
+      console.error(err);
+    }
   };
 
-  // Stub for delete
+  const handleEdit = (trigger: any) => {
+    console.log('Editing trigger patterns:', trigger.patterns); // DEBUG: Check console for data
+    setEditingId(trigger.id);
+    setFormData({
+      ...defaultFormData,
+      ...(trigger.patterns || {}),
+    }); // FIXED: Deep merge with defaults (handles partial/missing data)
+    setTriggerRewrite('');
+    setClauseRewrite(trigger.clause_template || '');
+    setSuggestedName(trigger.trigger_name || '');
+    // Auto-open manage-triggers-clauses if not open
+    if (openSection !== 'manage-triggers-clauses') toggleSection('manage-triggers-clauses');
+  };
+
   const handleDelete = async (id: string) => {
-    // Placeholder
+    await deleteTrigger(id);
   };
 
-  // Stub for clear
   const handleClear = () => {
-    // Placeholder
+    setTriggerRewrite('');
+    setClauseRewrite('');
+    setSuggestedName('');
+    setFormData(defaultFormData);
+    setEditingId(null);
   };
 
-  // Stub for add selected standards
-  const addSelectedStandards = () => {
-    setStandardsToConsider(selectedStandards.join(', '));
+  const handleAddOrUpdateStd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const applicable_to = stdForm.applicable_to.split(',').map((s) => s.trim()).filter(Boolean);
+    const payload = { standard_name: stdForm.standard_name, description: stdForm.description, category: stdForm.category, applicable_to };
+
+    if (editingStdId) {
+      await updateStandard(editingStdId, payload);
+      setEditingStdId(null);
+    } else {
+      await insertStandard(payload);
+    }
+    setStdForm({ id: '', standard_name: '', description: '', category: '', applicable_to: '' });
+    setIsEditingStd(false);
+    fetchStandards();
   };
 
-  // Stub for edit/delete standard (appearance only)
-  const editStandard = (id: string) => {
-    // Placeholder
+  const handleEditStd = (std: any) => {
+    setEditingStdId(std.id);
+    setStdForm({
+      id: std.id,
+      standard_name: std.standard_name,
+      description: std.description,
+      category: std.category,
+      applicable_to: std.applicable_to.join(', '),
+    });
+    setIsEditingStd(true);
   };
 
-  const deleteStandard = (id: string) => {
-    // Placeholder
+  const handleDeleteStd = async (id: string) => {
+    await deleteStandard(id);
+  };
+
+  // NEW: Clear function for standards form
+  const handleClearStd = () => {
+    setStdForm({ id: '', standard_name: '', description: '', category: '', applicable_to: '' });
+    setIsEditingStd(false);
+    setEditingStdId(null);
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin: Risk Triggers</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Trigger Setup</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="csi-code">CSI Code</Label>
-              <Input id="csi-code" value={csiCode} onChange={(e) => setCsiCode(e.target.value)} placeholder="e.g., 079200" />
-            </div>
-            <div>
-              <Label htmlFor="scope-keywords">Scope Keywords (one per line)</Label>
-              <Textarea id="scope-keywords" value={scopeKeywords} onChange={(e) => setScopeKeywords(e.target.value)} placeholder="e.g.,\nsidewalk joints\nslab isolation joints\ncolumn isolation joints" />
-            </div>
-            <div>
-              <Label htmlFor="scope-applicability">Scope/Applicability</Label>
-              <Input id="scope-applicability" value={scopeApplicability} onChange={(e) => setScopeApplicability(e.target.value)} placeholder="e.g., below-grade only or job-wide" />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="is-general" checked={isGeneralConditions} onCheckedChange={setIsGeneralConditions} />
-              <Label htmlFor="is-general">Scope-Specific Trigger? (Uncheck for general conditions)</Label>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Clause Inputs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="clause-title">Clause Title</Label>
-              <Input id="clause-title" value={clauseTitle} onChange={(e) => setClauseTitle(e.target.value)} placeholder="e.g., Expansion Joint Preparation" />
-            </div>
-            <div>
-              <Label htmlFor="clause-category">Clause Category</Label>
-              <Select value={clauseCategory} onValueChange={setClauseCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price-escalation">Price Escalation/Tariff</SelectItem>
-                  <SelectItem value="delay-site-condition">Delay/Site Condition</SelectItem>
-                  {/* Add more from PDF examples */}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="trigger-threshold">Trigger/Threshold</Label>
-              <Input id="trigger-threshold" value={triggerThreshold} onChange={(e) => setTriggerThreshold(e.target.value)} placeholder="e.g., cost increase >5%" />
-            </div>
-            <div>
-              <Label htmlFor="protections-exclusions">Protections/Exclusions</Label>
-              <Textarea id="protections-exclusions" value={protectionsExclusions} onChange={(e) => setProtectionsExclusions(e.target.value)} placeholder="e.g., Not responsible for cutting or grinding joint filler" />
-            </div>
-            <div>
-              <Label htmlFor="receipt-conditions">Receipt Conditions</Label>
-              <Textarea id="receipt-conditions" value={receiptConditions} onChange={(e) => setReceiptConditions(e.target.value)} placeholder="e.g., Clean, dry, recessed joints free of contaminants" />
-            </div>
-            <div>
-              <Label htmlFor="additional-details">Additional Details/Remedies</Label>
-              <Textarea id="additional-details" value={additionalDetails} onChange={(e) => setAdditionalDetails(e.target.value)} placeholder="e.g., Allow fixes per subcontract if GC requests" />
-            </div>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="standards">
-                <AccordionTrigger>Select Standards to Prioritize (Optional)</AccordionTrigger>
-                <AccordionContent>
-                  <div className="overflow-y-auto max-h-[200px]">
+    <div className="flex min-h-screen">
+      {/* Left Sidebar with Toggle Buttons */}
+      <div className="w-64 bg-muted p-4 border-r flex flex-col space-y-2">
+        <h1 className="text-xl font-bold mb-4">Admin Navigation</h1>
+        <Button variant={openSection === 'manage-triggers-clauses' ? 'default' : 'outline'} onClick={() => toggleSection('manage-triggers-clauses')}>
+          Manage Triggers and Clauses
+        </Button>
+        <Button variant={openSection === 'existing-triggers' ? 'default' : 'outline'} onClick={() => toggleSection('existing-triggers')}>
+          Existing Risk Triggers
+        </Button>
+        <Button variant={openSection === 'manage-standards' ? 'default' : 'outline'} onClick={() => toggleSection('manage-standards')}>
+          Manage Waterproofing Standards
+        </Button>
+      </div>
+
+      {/* Main Content Area - Starts Blank */}
+      <div className="flex-1 p-4 container mx-auto">
+        {!openSection && (
+          <div className="text-center mt-20 text-muted-foreground">
+            Select a section from the left to begin managing risk triggers.
+          </div>
+        )}
+
+        {/* Manage Triggers and Clauses Parent Card (with A + B + Preview inside) */}
+        {openSection === 'manage-triggers-clauses' && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Manage Triggers and Clauses</CardTitle>
+              <CardDescription>Configure triggers for scope parsing and define clause intent for rewrites.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Inner Card A: Trigger Configuration */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Trigger Configuration</CardTitle>
+                  <CardDescription>Define essentials for scope parsing (available during trigger detection).</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Label>Title</Label>
+                  <Input name="title" value={formData.title} onChange={handleFormChange} />
+
+                  <Label>CSI Code</Label>
+                  <Input name="csi_code" value={formData.csi_code} onChange={handleFormChange} />
+
+                  <Label>Scope Keywords (comma-separated)</Label>
+                  <Textarea name="keywords" value={formData.keywords} onChange={handleFormChange} />
+                </CardContent>
+              </Card>
+
+              {/* Inner Card B: Clause Intent */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Clause Intent</CardTitle>
+                  <CardDescription>Define details for clause generation (merged with prompt template).</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Label>Category</Label>
+                  <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })}>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prep-exclusion">Prep Exclusion</SelectItem>
+                      <SelectItem value="price-escalation">Price Escalation</SelectItem>
+                      <SelectItem value="general-conditions">General Conditions</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Label>Threshold (e.g., min PSI)</Label>
+                  <Input name="threshold" value={formData.threshold} onChange={handleFormChange} />
+
+                  <Label>Protections / Exclusions</Label>
+                  <Textarea name="exclusions" value={formData.exclusions} onChange={handleFormChange} />
+
+                  <Label>Receipt Conditions</Label>
+                  <Textarea name="receipt_conditions" value={formData.receipt_conditions} onChange={handleFormChange} />
+
+                  <Label>Additional Details</Label>
+                  <Textarea name="details" value={formData.details} onChange={handleFormChange} />
+
+                  <Label>Select Standards (optional)</Label>
+                  {standards.map((std) => (
+                    <div key={std.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={std.id}
+                        checked={formData.selected_standards.includes(std.id)}
+                        onCheckedChange={(checked) => {
+                          const updated = checked
+                            ? [...formData.selected_standards, std.id]
+                            : formData.selected_standards.filter((id) => id !== std.id);
+                          setFormData({ ...formData, selected_standards: updated });
+                        }}
+                      />
+                      <label htmlFor={std.id}>{std.standard_name}: {std.description}</label>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Generated Rewrite Preview - Always shown if data exists */}
+              {clauseRewrite && (
+                <div className="mb-6 p-4 border rounded-md bg-muted/50">
+                  <h2 className="text-xl font-semibold mb-2">Generated Rewrite Preview</h2>
+                  <p><strong>Suggested Name:</strong> {suggestedName}</p>
+                  <p><strong>Trigger:</strong> {triggerRewrite}</p>
+                  <p><strong>Clause:</strong> {clauseRewrite}</p>
+                </div>
+              )}
+
+              {/* Buttons at Bottom of Parent Card */}
+              <div className="flex space-x-4">
+                <Button onClick={handleGenerate}>Generate Rewrite</Button>
+                <Button onClick={handleCommit}>{editingId ? 'Update' : 'Commit'}</Button>
+                <Button variant="outline" onClick={handleClear}>Clear</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Existing Risk Triggers Card */}
+        {openSection === 'existing-triggers' && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Existing Risk Triggers</CardTitle>
+              <CardDescription>View and manage curated triggers.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-y-auto max-h-[400px]">
+                <Table>
+                  <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                  <TableBody>{triggers.map((t) => <TableRow key={t.id}><TableCell>{snakeToTitle(t.trigger_name)}</TableCell><TableCell><Button variant="ghost" onClick={() => handleEdit(t)}>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost">Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Delete</AlertDialogTitle><AlertDialogDescription>Delete '{t.trigger_name}'? This is permanent.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>)}</TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manage Waterproofing Standards Parent Card (with C + Form inside) */}
+        {openSection === 'manage-standards' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Manage Waterproofing Standards</CardTitle>
+              <CardDescription>Curate ASTM/ACI refs for trigger rewrites (e.g., substrate risks).</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Inner Card C: Existing Standards */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Existing Standards</CardTitle>
+                  <CardDescription>View and manage curated standards.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-y-auto max-h-[400px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[50px]"></TableHead>
-                          <TableHead>Standard</TableHead>
+                          <TableHead>Name</TableHead>
                           <TableHead>Description</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Applicable To</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mockStandards.map((std) => (
+                        {standards.map((std) => (
                           <TableRow key={std.id}>
+                            <TableCell className="whitespace-normal break-words">{std.standard_name}</TableCell>
+                            <TableCell className="whitespace-normal break-words">{std.description}</TableCell>
+                            <TableCell>{std.category}</TableCell>
+                            <TableCell>{std.applicable_to.join(', ')}</TableCell>
                             <TableCell>
-                              <Checkbox 
-                                checked={selectedStandards.includes(std.code)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) setSelectedStandards([...selectedStandards, std.code]);
-                                  else setSelectedStandards(selectedStandards.filter((s) => s !== std.code));
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>{std.code}</TableCell>
-                            <TableCell className="whitespace-pre-wrap break-words">{std.description}</TableCell>
-                            <TableCell className="flex space-x-1">
-                              <Button variant="ghost" size="sm" onClick={() => editStandard(std.id)}>Edit</Button>
-                              <Button variant="ghost" size="sm" onClick={() => deleteStandard(std.id)}>Delete</Button>
+                              <Button variant="ghost" onClick={() => handleEditStd(std)}>Edit</Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost">Delete</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+                                    <AlertDialogDescription>Delete '{std.standard_name}'? This is permanent.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteStd(std.id)}>Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                  <Button className="mt-4" onClick={addSelectedStandards}>Add Selected</Button>
-                  <Input className="mt-2" value={standardsToConsider} readOnly placeholder="Selected standards appear here" />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </CardContent>
-        </Card>
-        <Button type="button" onClick={generateRewrites} disabled={generating}>
-          {generating ? 'Generating...' : 'Generate Rewrites'}
-        </Button>
-        {triggerRewrite && (
-          <div>
-            <Label>Trigger Rewrite</Label>
-            <pre className="p-2 bg-muted rounded whitespace-pre-wrap break-words overflow-x-auto">{triggerRewrite}</pre>
-          </div>
+                </CardContent>
+              </Card>
+
+              {/* Add/Update Form */}
+              <form onSubmit={handleAddOrUpdateStd} className="space-y-4">
+                <Label>Standard Name (e.g., ASTM D4541)</Label>
+                <Input name="standard_name" value={stdForm.standard_name} onChange={handleStdChange} required />
+
+                <Label>Description</Label>
+                <Textarea name="description" value={stdForm.description} onChange={handleStdChange} />
+
+                <Label>Category (e.g., substrates)</Label>
+                <Input name="category" value={stdForm.category} onChange={handleStdChange} />
+
+                <Label>Applicable To (comma-separated, e.g., concrete,membranes)</Label>
+                <Input name="applicable_to" value={stdForm.applicable_to} onChange={handleStdChange} />
+
+                <div className="flex space-x-4">
+                  <Button type="submit">{editingStdId ? 'Update' : 'Add'} Standard</Button>
+                  <Button variant="outline" onClick={handleClearStd}>Clear</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
-        {clauseRewrite && (
-          <div>
-            <Label>Clause Rewrite</Label>
-            <pre className="p-2 bg-muted rounded whitespace-pre-wrap break-words overflow-x-auto">{clauseRewrite}</pre>
-          </div>
-        )}
-        <Button type="submit">{editingId ? 'Update' : 'Commit'}</Button>
-        <Button type="button" variant="outline" onClick={handleClear}>Clear & Retry</Button>
-      </form>
-      <div className="overflow-y-auto max-h-[400px]">
-        <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
-          <TableBody>{triggers.map((t) => <TableRow key={t.id}><TableCell>{snakeToTitle(t.trigger_name)}</TableCell><TableCell><Button variant="ghost" onClick={() => handleEdit(t)}>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost">Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Delete</AlertDialogTitle><AlertDialogDescription>Delete &apos;{t.trigger_name}&apos;? This is permanent.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>)}</TableBody>
-        </Table>
       </div>
     </div>
   );

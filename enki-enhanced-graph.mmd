@@ -10,11 +10,18 @@ graph TD
   page_tsx -->|import w5| components_ui_alert-dialog
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_accordion
-  page_tsx -->|import w5| components_ui_switch
   page_tsx -->|import w5| components_ui_select
   page_tsx -->|import w5| components_ui_checkbox
-  page_tsx -->|import w5| react-hot-toast
   page_tsx -->|import w7| lib_use-triggers
+  page_tsx -->|import w7| lib_use-standards
+  page_tsx -->|import w5| react-hot-toast
+  page_tsx -->|call w8| fetch
+  page_tsx -->|call w8| updateTrigger
+  page_tsx -->|call w8| insertTrigger
+  page_tsx -->|call w8| deleteTrigger
+  page_tsx -->|call w8| updateStandard
+  page_tsx -->|call w8| insertStandard
+  page_tsx -->|call w8| deleteStandard
   route_ts -->|import w5| next_server
   route_ts -->|import w5| openai
   route_ts -->|import w7| lib_prompts_trigger-rewrite
@@ -170,6 +177,9 @@ graph TD
   use-auth_ts -->|import w7| lib_supabase
   use-auth_ts -->|import w5| @supabase_supabase-js
   use-auth_ts -->|import w5| react-hot-toast
+  use-standards_ts -->|import w5| react
+  use-standards_ts -->|import w7| lib_supabase
+  use-standards_ts -->|import w5| react-hot-toast
   use-triggers_ts -->|import w5| react
   use-triggers_ts -->|import w7| lib_supabase
   use-triggers_ts -->|import w5| react-hot-toast
@@ -220,6 +230,7 @@ graph TD
   trigger-rewrite_ts["trigger-rewrite_ts (misc, ext) - lib/prompts/trigger-..."]
   supabase_ts["supabase_ts (misc, ext) - Global singleton ins..."]
   use-auth_ts["use-auth_ts (misc, ext) - lib/use-auth.ts (UPD..."]
+  use-standards_ts["use-standards_ts (misc, ext) - lib/use-standards.ts..."]
   use-triggers_ts["use-triggers_ts (misc, ext) - lib/use-triggers.ts..."]
   utils_ts["utils_ts (misc, ext) - No description found..."]
   next-env_d_ts["next-env_d_ts (misc, ext) - <reference types="ne..."]

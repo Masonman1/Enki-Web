@@ -19,58 +19,76 @@ const openai = new OpenAI({
 interface RewriteBody {
   trigger_desc?: string;
   clause_desc?: string;
-  // Optional future params: jurisdiction, csi_code, etc.
+  // Structured fields
+  csi_code?: string;
+  keywords?: string;
+  title?: string;
+  category?: string;
+  threshold?: string;
+  exclusions?: string;
+  receipt_conditions?: string;
+  details?: string;
+  selected_standards?: string[]; // IDs; fetch names in prompt if needed
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RewriteBody;
-    const { trigger_desc, clause_desc } = body;
 
-    // Derive title and topic from clause_desc (stubs for MVP; PM can input directly in form later)
-const title = "Substrate Receipt"; // Fixed neutral title — never used in output
-const topic = "substrate receipt and preparation requirements"; 
+    // Derive triggerContext and userContext from structured fields
+    const triggerContext = `CSI: ${body.csi_code || ''}. Keywords: ${body.keywords || ''}. Category: ${body.category || ''}. Threshold: ${body.threshold || ''}.`;
+    const userContext = `Title: ${body.title || ''}. Exclusions: ${body.exclusions || ''}. Receipt: ${body.receipt_conditions || ''}. Details: ${body.details || ''}. Standards: ${body.selected_standards?.join(', ') || 'none'}.`;
 
-const promptParams: ClausePromptParams = {
-  triggerContext: trigger_desc || "Unknown trigger",
-  userContext: clause_desc || "Unknown clause",
-};
-
+    const promptParams: ClausePromptParams = { triggerContext, userContext };
     const prompt = composeClausePrompt(promptParams);
 
-    try {
+    let parsedResponse;
+    if (grokApiKey) {
       const completion = await openai.chat.completions.create({
         model: 'grok-4',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
-        temperature: 0.2, // Low for structured output
+        temperature: 0.1,
       });
-
-      const responseContent = completion.choices[0].message.content;
-      if (!responseContent) throw new Error('Empty Grok response');
-
-      const parsedResponse: { clause_rewrite: string } = JSON.parse(responseContent);
-
-      // For full rewrite: Include trigger_rewrite and suggested_name (stubs or expand composer later)
-      const trigger_rewrite = trigger_desc ? `CSI equals ${trigger_desc.match(/\d{6}/)?.[0] || 'unknown'} AND scope_item contains '${trigger_desc.split(' ').slice(-3).join(' ') || 'unknown'}'` : '';
-      const suggested_name = trigger_desc?.toLowerCase().replace(/\s+/g, '_').slice(0, 50) || 'unknown_trigger';
-
-      return NextResponse.json({ 
-        trigger_rewrite, 
-        clause_rewrite: parsedResponse.clause_rewrite, 
-        suggested_name 
-      });
-    } catch (grokError: unknown) {
-      console.error('Grok rewrite error:', grokError);
-      // Fallback to original mock for resilience
-      const trigger_rewrite = `CSI equals ${trigger_desc?.match(/\d{6}/)?.[0] || 'unknown'} AND scope_item contains '${trigger_desc?.split(' ').slice(-3).join(' ') || 'unknown'}'`;
-      const clause_rewrite = `Exhibit: The General Contractor shall indemnify and hold harmless the Subcontractor from any and all claims, losses, or delays arising from ${clause_desc?.toLowerCase() || 'unknown'}, pursuant to applicable building codes and subcontractor agreements. Subcontractor entitled to equitable adjustment for additional costs.`;
-      const suggested_name = trigger_desc?.toLowerCase().replace(/\s+/g, '_').slice(0, 50) || 'unknown_trigger';
-      return NextResponse.json({ trigger_rewrite, clause_rewrite, suggested_name }, { status: 200 }); // Graceful degrade
+      parsedResponse = JSON.parse(completion.choices[0].message.content!);
+    } else {
+      // Fallback mocks using structured fields
+      parsedResponse = {
+        clause_rewrite: `Exhibit: The General Contractor shall indemnify and hold harmless the Subcontractor from any and all claims, losses, or delays arising from ${userContext.toLowerCase() || 'unknown'}, pursuant to applicable building codes and subcontractor agreements. Subcontractor entitled to equitable adjustment for additional costs.`,
+        suggested_name: body.title?.toLowerCase().replace(/\s+/g, '_').slice(0, 50) || 'unknown_trigger',
+      };
     }
+
+    // NEW: Build trigger_rewrite from structured fields
+    const csi = body.csi_code || 'unknown';
+    const keywordsList = body.keywords ? body.keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
+    const keywordsCondition = keywordsList.length > 0 
+      ? keywordsList.join("' OR scope_item contains '")
+      : 'unknown';
+    const trigger_rewrite = `CSI equals ${csi} AND scope_item contains '${keywordsCondition}'`;
+
+    return NextResponse.json({
+      trigger_rewrite,
+      clause_rewrite: parsedResponse.clause_rewrite,
+      suggested_name: parsedResponse.suggested_name,
+    }, { status: 200 });
+
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('AI rewrite error:', message);
-    return NextResponse.json({ error: 'Rewrite failed' }, { status: 500 });
+
+    // Fallback using body if available
+    const body = await req.json() as RewriteBody; // Re-parse if needed
+    const csi = body.csi_code || 'unknown';
+    const keywordsList = body.keywords ? body.keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
+    const keywordsCondition = keywordsList.length > 0 
+      ? keywordsList.join("' OR scope_item contains '")
+      : 'unknown';
+    const trigger_rewrite = `CSI equals ${csi} AND scope_item contains '${keywordsCondition}'`;
+
+    const clause_rewrite = `Exhibit: The General Contractor shall indemnify and hold harmless the Subcontractor from any and all claims, losses, or delays arising from unknown, pursuant to applicable building codes and subcontractor agreements. Subcontractor entitled to equitable adjustment for additional costs.`;
+    const suggested_name = 'unknown_trigger';
+
+    return NextResponse.json({ trigger_rewrite, clause_rewrite, suggested_name }, { status: 200 }); // Graceful degrade
   }
 }
