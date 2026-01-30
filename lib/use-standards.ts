@@ -39,7 +39,29 @@ export function useStandards() {
     fetchStandards();
   }, [fetchStandards]);
 
-  async function insertStandard(newStandard: Omit<Standard, 'id' | 'created_at' | 'updated_at' | 'created_by'>) {
+  // Realtime subscription for auto-refresh on DB changes
+  useEffect(() => {
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel('wp_standards_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wp_standards' },
+        (payload) => {
+          console.log('Realtime change detected:', payload); // Optional debug
+          fetchStandards();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [supabase, fetchStandards]);
+
+  // UPDATED: Param now includes created_by (no longer omitted)
+  async function insertStandard(newStandard: Omit<Standard, 'id' | 'created_at' | 'updated_at'>) {
     if (!supabase) return;
     try {
       const { error } = await supabase.from('wp_standards').insert(newStandard);

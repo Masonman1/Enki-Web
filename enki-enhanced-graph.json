@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-30T17:14:51.383Z",
+  "generated_at": "2026-01-30T20:20:06.346Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -29,7 +29,7 @@
       "category": "misc",
       "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\n\r\nimport { useState, useEffect } from 'react';\r\nimport {...",
       "exports": [],
-      "lines": 421,
+      "lines": 422,
       "external": true
     },
     {
@@ -415,7 +415,7 @@
       "exports": [
         "useStandards"
       ],
-      "lines": 82,
+      "lines": 104,
       "external": true
     },
     {
@@ -581,18 +581,6 @@
     {
       "source": "page_tsx",
       "target": "deleteTrigger",
-      "type": "call",
-      "weight": 8
-    },
-    {
-      "source": "page_tsx",
-      "target": "updateStandard",
-      "type": "call",
-      "weight": 8
-    },
-    {
-      "source": "page_tsx",
-      "target": "insertStandard",
       "type": "call",
       "weight": 8
     },
@@ -1589,7 +1577,7 @@
   ],
   "stats": {
     "nodeCount": 49,
-    "edgeCount": 187,
-    "avgLines": 68.79591836734694
+    "edgeCount": 185,
+    "avgLines": 69.26530612244898
   }
 }

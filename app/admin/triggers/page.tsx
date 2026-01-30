@@ -26,6 +26,7 @@ export default function TriggersAdmin() {
   const { session, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  // All hook calls moved to top (before any early returns)
   const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger } = useTriggers();
   const { standards, loading: standardsLoading, insertStandard, updateStandard, deleteStandard, fetchStandards } = useStandards();
 
@@ -58,13 +59,9 @@ export default function TriggersAdmin() {
   const [isEditingStd, setIsEditingStd] = useState(false);
   const [editingStdId, setEditingStdId] = useState<string | null>(null);
 
-  // State for open section (single-toggle)
   const [openSection, setOpenSection] = useState<string | null>(null);
 
-  const toggleSection = (section: string) => {
-    setOpenSection((prev) => (prev === section ? null : section));
-  };
-
+  // Effects also at top
   useEffect(() => {
     if (authLoading || !session) {
       if (!authLoading) router.push('/');
@@ -72,9 +69,14 @@ export default function TriggersAdmin() {
     }
   }, [authLoading, session, router]);
 
+  // Early return now after all hooks
   if (authLoading || triggersLoading || standardsLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
+
+  const toggleSection = (section: string) => {
+    setOpenSection((prev) => (prev === section ? null : section));
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -101,7 +103,7 @@ export default function TriggersAdmin() {
       setTriggerRewrite(trigger_rewrite);
       setClauseRewrite(clause_rewrite);
       setSuggestedName(suggested_name);
-      toast.success('Rewrite generated!');
+      toast.success('Rewrite generated');
     } catch (err) {
       toast.error('Generate failed');
       console.error(err);
@@ -158,20 +160,27 @@ export default function TriggersAdmin() {
     setEditingId(null);
   };
 
-  const handleAddOrUpdateStd = async (e: React.FormEvent) => {
+  const handleAddOrUpdateStd = (e: React.FormEvent) => {
     e.preventDefault();
-    const applicable_to = stdForm.applicable_to.split(',').map((s) => s.trim()).filter(Boolean);
-    const payload = { standard_name: stdForm.standard_name, description: stdForm.description, category: stdForm.category, applicable_to };
+    const applicable_to = stdForm.applicable_to.split(',').map(t => t.trim()).filter(Boolean);
+    const updates = {
+      standard_name: stdForm.standard_name,
+      description: stdForm.description,
+      category: stdForm.category,
+      applicable_to,
+    };
 
     if (editingStdId) {
-      await updateStandard(editingStdId, payload);
-      setEditingStdId(null);
+      updateStandard(editingStdId, updates);
     } else {
-      await insertStandard(payload);
+      // NEW: Explicitly add created_by from session for ownership/RLS
+      const newStandard = {
+        ...updates,
+        created_by: session?.user?.id || '', // Fallback empty if guest/dev, but auth required for admin
+      };
+      insertStandard(newStandard);
     }
-    setStdForm({ id: '', standard_name: '', description: '', category: '', applicable_to: '' });
-    setIsEditingStd(false);
-    fetchStandards();
+    handleClearStd();
   };
 
   const handleEditStd = (std: any) => {
@@ -217,203 +226,195 @@ export default function TriggersAdmin() {
       <div className="flex-1 p-4 container mx-auto">
         {!openSection && (
           <div className="text-center mt-20 text-muted-foreground">
-            Select a section from the left to begin managing risk triggers.
+            Select a section from the left to begin.
           </div>
         )}
 
-        {/* Manage Triggers and Clauses Parent Card (with A + B + Preview inside) */}
+        {/* Manage Triggers and Clauses */}
         {openSection === 'manage-triggers-clauses' && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Manage Triggers and Clauses</CardTitle>
-              <CardDescription>Configure triggers for scope parsing and define clause intent for rewrites.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Inner Card A: Trigger Configuration */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Trigger Configuration</CardTitle>
-                  <CardDescription>Define essentials for scope parsing (available during trigger detection).</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Label>Title</Label>
-                  <Input name="title" value={formData.title} onChange={handleFormChange} />
+          <form onSubmit={handleCommit} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Trigger Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Label>Title</Label>
+                <Input name="title" value={formData.title} onChange={handleFormChange} />
 
-                  <Label>CSI Code</Label>
-                  <Input name="csi_code" value={formData.csi_code} onChange={handleFormChange} />
+                <Label>CSI Code</Label>
+                <Input name="csi_code" value={formData.csi_code} onChange={handleFormChange} />
 
-                  <Label>Scope Keywords (comma-separated)</Label>
-                  <Textarea name="keywords" value={formData.keywords} onChange={handleFormChange} />
-                </CardContent>
-              </Card>
+                <Label>Keywords (comma-separated)</Label>
+                <Input name="keywords" value={formData.keywords} onChange={handleFormChange} />
 
-              {/* Inner Card B: Clause Intent */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Clause Intent</CardTitle>
-                  <CardDescription>Define details for clause generation (merged with prompt template).</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Label>Category</Label>
-                  <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })}>
-                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="prep-exclusion">Prep Exclusion</SelectItem>
-                      <SelectItem value="price-escalation">Price Escalation</SelectItem>
-                      <SelectItem value="general-conditions">General Conditions</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <Label>Category</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prep-exclusion">Prep-Exclusion</SelectItem>
+                    <SelectItem value="sequencing">Sequencing</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                  <Label>Threshold (e.g., min PSI)</Label>
-                  <Input name="threshold" value={formData.threshold} onChange={handleFormChange} />
+                <Label>Threshold (e.g., $10K)</Label>
+                <Input name="threshold" value={formData.threshold} onChange={handleFormChange} />
 
-                  <Label>Protections / Exclusions</Label>
-                  <Textarea name="exclusions" value={formData.exclusions} onChange={handleFormChange} />
+                <Label>Exclusions</Label>
+                <Textarea name="exclusions" value={formData.exclusions} onChange={handleFormChange} />
 
-                  <Label>Receipt Conditions</Label>
-                  <Textarea name="receipt_conditions" value={formData.receipt_conditions} onChange={handleFormChange} />
+                <Label>Receipt Conditions</Label>
+                <Textarea name="receipt_conditions" value={formData.receipt_conditions} onChange={handleFormChange} />
 
-                  <Label>Additional Details</Label>
-                  <Textarea name="details" value={formData.details} onChange={handleFormChange} />
+                <Label>Details</Label>
+                <Textarea name="details" value={formData.details} onChange={handleFormChange} />
 
-                  <Label>Select Standards (optional)</Label>
+                <Label>Applicable Standards</Label>
+                <div className="space-y-2">
                   {standards.map((std) => (
                     <div key={std.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={std.id}
                         checked={formData.selected_standards.includes(std.id)}
-                        onCheckedChange={(checked) => {
-                          const updated = checked
-                            ? [...formData.selected_standards, std.id]
-                            : formData.selected_standards.filter((id) => id !== std.id);
-                          setFormData({ ...formData, selected_standards: updated });
-                        }}
+                        onCheckedChange={() => handleCheckboxChange(std.id)}
                       />
-                      <label htmlFor={std.id}>{std.standard_name}: {std.description}</label>
+                      <Label htmlFor={std.id}>{std.standard_name} ({std.category})</Label>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
-
-              {/* Generated Rewrite Preview - Always shown if data exists */}
-              {clauseRewrite && (
-                <div className="mb-6 p-4 border rounded-md bg-muted/50">
-                  <h2 className="text-xl font-semibold mb-2">Generated Rewrite Preview</h2>
-                  <p><strong>Suggested Name:</strong> {suggestedName}</p>
-                  <p><strong>Trigger:</strong> {triggerRewrite}</p>
-                  <p><strong>Clause:</strong> {clauseRewrite}</p>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              {/* Buttons at Bottom of Parent Card */}
-              <div className="flex space-x-4">
-                <Button onClick={handleGenerate}>Generate Rewrite</Button>
-                <Button onClick={handleCommit}>{editingId ? 'Update' : 'Commit'}</Button>
-                <Button variant="outline" onClick={handleClear}>Clear</Button>
+            <Card>
+              <CardHeader>
+                <CardTitle>Clause Intent</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Label>Clause Description</Label>
+                <Textarea name="clause_desc" value={formData.clause_desc} onChange={handleFormChange} />
+              </CardContent>
+            </Card>
+
+            <div className="flex space-x-4">
+              <Button type="button" onClick={handleGenerate}>Generate Rewrite</Button>
+              <Button type="submit">Commit Trigger</Button>
+              <Button variant="outline" type="button" onClick={handleClear}>Clear</Button>
+            </div>
+
+            {clauseRewrite && (
+              <div className="mt-4 p-4 border rounded">
+                <strong>Suggested Name:</strong> {suggestedName}<br />
+                <strong>Trigger Rewrite:</strong> {triggerRewrite}<br />
+                <strong>Clause Rewrite:</strong> {clauseRewrite}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </form>
         )}
 
-        {/* Existing Risk Triggers Card */}
+        {/* Existing Risk Triggers */}
         {openSection === 'existing-triggers' && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Existing Risk Triggers</CardTitle>
-              <CardDescription>View and manage curated triggers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-y-auto max-h-[400px]">
-                <Table>
-                  <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
-                  <TableBody>{triggers.map((t) => <TableRow key={t.id}><TableCell>{snakeToTitle(t.trigger_name)}</TableCell><TableCell><Button variant="ghost" onClick={() => handleEdit(t)}>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost">Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Delete</AlertDialogTitle><AlertDialogDescription>Delete '{t.trigger_name}'? This is permanent.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>)}</TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {triggers.map((trigger) => (
+                  <TableRow key={trigger.id}>
+                    <TableCell>{trigger.trigger_name}</TableCell>
+                    <TableCell>{trigger.description}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" onClick={() => handleEdit(trigger)}>Edit</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="ml-2">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+                            <AlertDialogDescription>Delete this trigger?</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(trigger.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
 
-        {/* Manage Waterproofing Standards Parent Card (with C + Form inside) */}
+        {/* Manage Waterproofing Standards */}
         {openSection === 'manage-standards' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Manage Waterproofing Standards</CardTitle>
-              <CardDescription>Curate ASTM/ACI refs for trigger rewrites (e.g., substrate risks).</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Inner Card C: Existing Standards */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Existing Standards</CardTitle>
-                  <CardDescription>View and manage curated standards.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-y-auto max-h-[400px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Applicable To</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {standards.map((std) => (
-                          <TableRow key={std.id}>
-                            <TableCell className="whitespace-normal break-words">{std.standard_name}</TableCell>
-                            <TableCell className="whitespace-normal break-words">{std.description}</TableCell>
-                            <TableCell>{std.category}</TableCell>
-                            <TableCell>{std.applicable_to.join(', ')}</TableCell>
-                            <TableCell>
-                              <Button variant="ghost" onClick={() => handleEditStd(std)}>Edit</Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost">Delete</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
-                                    <AlertDialogDescription>Delete '{std.standard_name}'? This is permanent.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteStd(std.id)}>Delete</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="space-y-6">
+            <form onSubmit={handleAddOrUpdateStd} className="space-y-4">
+              <Label>Standard Name (e.g., ASTM D4541)</Label>
+              <Input name="standard_name" value={stdForm.standard_name} onChange={handleStdChange} required />
 
-              {/* Add/Update Form */}
-              <form onSubmit={handleAddOrUpdateStd} className="space-y-4">
-                <Label>Standard Name (e.g., ASTM D4541)</Label>
-                <Input name="standard_name" value={stdForm.standard_name} onChange={handleStdChange} required />
+              <Label>Description</Label>
+              <Textarea name="description" value={stdForm.description} onChange={handleStdChange} />
 
-                <Label>Description</Label>
-                <Textarea name="description" value={stdForm.description} onChange={handleStdChange} />
+              <Label>Category (e.g., substrates)</Label>
+              <Input name="category" value={stdForm.category} onChange={handleStdChange} />
 
-                <Label>Category (e.g., substrates)</Label>
-                <Input name="category" value={stdForm.category} onChange={handleStdChange} />
+              <Label>Applicable To (comma-separated, e.g., concrete,membranes)</Label>
+              <Input name="applicable_to" value={stdForm.applicable_to} onChange={handleStdChange} />
 
-                <Label>Applicable To (comma-separated, e.g., concrete,membranes)</Label>
-                <Input name="applicable_to" value={stdForm.applicable_to} onChange={handleStdChange} />
+              <div className="flex space-x-4">
+                <Button type="submit">{editingStdId ? 'Update' : 'Add'} Standard</Button>
+                <Button variant="outline" onClick={handleClearStd}>Clear</Button>
+              </div>
+            </form>
 
-                <div className="flex space-x-4">
-                  <Button type="submit">{editingStdId ? 'Update' : 'Add'} Standard</Button>
-                  <Button variant="outline" onClick={handleClearStd}>Clear</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Applicable To</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {standards.map((std) => (
+                  <TableRow key={std.id}>
+                    <TableCell>{std.standard_name}</TableCell>
+                    <TableCell>{std.description}</TableCell>
+                    <TableCell>{std.category}</TableCell>
+                    <TableCell>{std.applicable_to.join(', ')}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" onClick={() => handleEditStd(std)}>Edit</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="ml-2">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+                            <AlertDialogDescription>Delete this standard?</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteStd(std.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
     </div>
