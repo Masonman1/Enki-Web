@@ -1,6 +1,4 @@
-// lib/use-auth.ts (UPDATED: Added error handling, isMounted guard, and debug logs for loop prevention; ensured redirect exclusion works robustly)
-// Additional: Use window.location.href for sync redirect in logout to fix race/flash
-
+// lib/use-auth.ts (UPDATED: Fixed syntax in useEffect cleanup; added logs for session init/redirects)
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase';
@@ -28,38 +26,44 @@ export function useAuth() {
         if (isMounted) {
           console.log('Initial session:', session ? 'Present' : 'Null');
           setSession(session);
-          setLoading(false);
+          const path = window.location.pathname;
+          if (!session && !path.startsWith('/phase1b') && path !== '/') {
+            console.log('Init redirect to / from path:', path);
+            router.push('/');
+            router.refresh();
+          }
         }
       } catch (err) {
         console.error('Session init error:', err);
-        toast.error('Session failed - check connection');
+      } finally {
         if (isMounted) setLoading(false);
       }
     }
-
     initSession();
 
     if (!supabase) return () => {}; // Early cleanup if no client
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, newSession: Session | null) => {
-      if (isMounted) {
-        setSession(newSession);
-        const path = window.location.pathname;
-        if (!newSession && !path.startsWith('/phase1b') && path !== '/') {
-          console.log('State change redirect to / from path:', path);
-          router.push('/');
-          router.refresh(); // Refresh for state clear
-        } else if (path === '/') {
-          console.log('State change redirect skipped: already at /');
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, newSession: Session | null) => {
+        if (isMounted) {
+          setSession(newSession);
+          const path = window.location.pathname;
+          if (!newSession && !path.startsWith('/phase1b') && path !== '/') {
+            console.log('State change redirect to / from path:', path);
+            router.push('/');
+            router.refresh();
+          } else if (path === '/') {
+            console.log('State change redirect skipped: already at /');
+          }
         }
       }
-    });
+    );
 
     return () => {
       isMounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase, router]);  // FIXED: Proper closing (no extra brace)
 
   const logout = async () => {
     if (!supabase) return;

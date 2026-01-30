@@ -1,7 +1,7 @@
 // lib/use-triggers.ts
 'use client';
 
-import { useState, useEffect, useCallback } from 'react'; // Add useCallback
+import { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -32,16 +32,16 @@ export function useTriggers() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]); // Dep on supabase
+  }, [supabase]);
 
   useEffect(() => {
     fetchTriggers();
-  }, [fetchTriggers]); // Dep on callback
+  }, [fetchTriggers]);
 
-  async function insertTrigger(trigger: Omit<Trigger, 'id' | 'created_at' | 'updated_at'>) {
+  async function insertTrigger(newTrigger: Omit<Trigger, 'id' | 'created_at' | 'updated_at'>) {
     if (!supabase) return;
     try {
-      const { error } = await supabase.from('risk_triggers').insert(trigger);
+      const { error } = await supabase.from('risk_triggers').insert(newTrigger);
       if (error) throw error;
       toast.success('Trigger added');
       fetchTriggers();
@@ -77,5 +77,5 @@ export function useTriggers() {
     }
   }
 
-  return { triggers, loading, insertTrigger, updateTrigger, deleteTrigger };
+  return { triggers, loading, insertTrigger, updateTrigger, deleteTrigger, fetchTriggers };  // FIXED: Added fetchTriggers here
 }

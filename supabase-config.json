@@ -478,6 +478,84 @@
         }
       ]
     },
+    "wp_standards": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid"
+        },
+        {
+          "column_name": "standard_name",
+          "data_type": "text"
+        },
+        {
+          "column_name": "description",
+          "data_type": "text"
+        },
+        {
+          "column_name": "category",
+          "data_type": "text"
+        },
+        {
+          "column_name": "applicable_to",
+          "data_type": "ARRAY"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone"
+        },
+        {
+          "column_name": "created_by",
+          "data_type": "uuid"
+        }
+      ],
+      "rls_policies": [
+        {
+          "cmd": "r",
+          "qual": "{OPEXPR :opno 98 :opfuncid 67 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 100 :args ({FUNCEXPR :funcid 16539 :funcresulttype 25 :funcretset false :funcvariadic false :funcformat 0 :funccollid 100 :inputcollid 0 :args <> :location -1} {CONST :consttype 25 :consttypmod -1 :constcollid 100 :constlen -1 :constbyval false :constisnull false :location -1 :constvalue 17 [ 68 0 0 0 97 117 116 104 101 110 116 105 99 97 116 101 100 ]}) :location -1}",
+          "roles": [
+            "0"
+          ],
+          "permissive": true,
+          "policyname": "Allow all authenticated to read standards",
+          "with_check": null
+        },
+        {
+          "cmd": "a",
+          "qual": null,
+          "roles": [
+            "0"
+          ],
+          "permissive": true,
+          "policyname": "Allow authenticated to insert standards",
+          "with_check": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1} {VAR :varno 1 :varattno 8 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 8 :location -1}) :location -1}"
+        },
+        {
+          "cmd": "d",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1} {VAR :varno 1 :varattno 8 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 8 :location -1}) :location -1}",
+          "roles": [
+            "0"
+          ],
+          "permissive": true,
+          "policyname": "Allow owners to delete own standards",
+          "with_check": null
+        },
+        {
+          "cmd": "w",
+          "qual": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1} {VAR :varno 1 :varattno 8 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 8 :location -1}) :location -1}",
+          "roles": [
+            "16481"
+          ],
+          "permissive": true,
+          "policyname": "Allow owners to update own standards",
+          "with_check": "{OPEXPR :opno 2972 :opfuncid 2956 :opresulttype 16 :opretset false :opcollid 0 :inputcollid 0 :args ({FUNCEXPR :funcid 16538 :funcresulttype 2950 :funcretset false :funcvariadic false :funcformat 0 :funccollid 0 :inputcollid 0 :args <> :location -1} {VAR :varno 1 :varattno 8 :vartype 2950 :vartypmod -1 :varcollid 0 :varnullingrels (b) :varlevelsup 0 :varnosyn 1 :varattnosyn 8 :location -1}) :location -1}"
+        }
+      ]
+    },
     "dev_logs": {
       "columns": [
         {
@@ -555,6 +633,6 @@
       ]
     }
   },
-  "last_updated": "2026-01-27T15:52:32.463Z",
+  "last_updated": "2026-01-30T23:21:03.340Z",
   "changes": []
 }

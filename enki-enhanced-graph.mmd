@@ -2,23 +2,20 @@ graph TD
   page_tsx -->|import w5| react
   page_tsx -->|import w7| lib_use-auth
   page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w5| components_ui_button
-  page_tsx -->|import w5| components_ui_input
-  page_tsx -->|import w5| components_ui_label
-  page_tsx -->|import w5| components_ui_table
-  page_tsx -->|import w5| components_ui_textarea
-  page_tsx -->|import w5| components_ui_alert-dialog
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_accordion
-  page_tsx -->|import w5| components_ui_select
-  page_tsx -->|import w5| components_ui_checkbox
+  page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w7| lib_use-triggers
   page_tsx -->|import w7| lib_use-standards
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| fetch
-  page_tsx -->|call w8| updateTrigger
+  page_tsx -->|import w5| components_admin_TriggerForm
+  page_tsx -->|import w5| components_admin_StandardForm
+  page_tsx -->|import w5| components_admin_TriggerTable
+  page_tsx -->|import w5| components_admin_StandardTable
   page_tsx -->|call w8| insertTrigger
+  page_tsx -->|call w8| updateTrigger
   page_tsx -->|call w8| deleteTrigger
+  page_tsx -->|call w8| insertStandard
+  page_tsx -->|call w8| updateStandard
   page_tsx -->|call w8| deleteStandard
   route_ts -->|import w5| next_server
   route_ts -->|import w5| openai
@@ -74,6 +71,24 @@ graph TD
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w5| components_ui_alert
+  StandardForm_tsx -->|import w5| components_ui_input
+  StandardForm_tsx -->|import w5| components_ui_label
+  StandardForm_tsx -->|import w5| components_ui_textarea
+  StandardForm_tsx -->|import w5| components_ui_button
+  StandardForm_tsx -->|import w5| components_ui_select
+  StandardForm_tsx -->|import w5| components_ui_checkbox
+  StandardTable_tsx -->|import w5| components_ui_table
+  StandardTable_tsx -->|import w5| components_ui_button
+  StandardTable_tsx -->|import w5| components_ui_alert-dialog
+  TriggerForm_tsx -->|import w5| components_ui_input
+  TriggerForm_tsx -->|import w5| components_ui_label
+  TriggerForm_tsx -->|import w5| components_ui_textarea
+  TriggerForm_tsx -->|import w5| components_ui_button
+  TriggerForm_tsx -->|import w5| components_ui_select
+  TriggerForm_tsx -->|import w5| components_ui_checkbox
+  TriggerTable_tsx -->|import w5| components_ui_table
+  TriggerTable_tsx -->|import w5| components_ui_button
+  TriggerTable_tsx -->|import w5| components_ui_alert-dialog
   auth-wrapper_tsx -->|import w5| react
   auth-wrapper_tsx -->|import w5| next_navigation
   auth-wrapper_tsx -->|import w7| lib_supabase
@@ -193,6 +208,10 @@ graph TD
   page_tsx["page_tsx (misc, ext) - app/phase1a/page.tsx..."]
   page_tsx["page_tsx (misc, ext) - app/phase1b/page.tsx..."]
   page_tsx["page_tsx (misc, ext) - app/test-storage/pag..."]
+  StandardForm_tsx["StandardForm_tsx (misc, ext) - No description found..."]
+  StandardTable_tsx["StandardTable_tsx (misc, ext) - No description found..."]
+  TriggerForm_tsx["TriggerForm_tsx (misc, ext) - No description found..."]
+  TriggerTable_tsx["TriggerTable_tsx (misc, ext) - No description found..."]
   auth-wrapper_tsx["auth-wrapper_tsx (misc, ext) - components/auth-wrap..."]
   upload-zone_tsx["upload-zone_tsx (misc, ext) - Client component for..."]
   header_tsx["header_tsx (misc, ext) - components/layout/he..."]
