@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-30T23:20:26.840Z",
+  "generated_at": "2026-02-02T16:27:26.067Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -27,9 +27,9 @@
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/admin/triggers/page.tsx\r\n'use client';  // Client Component (hooks/effects)\r\n\r\nimport { useState...",
+      "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\nimport { useState, useEffect } from 'react';\r\nimport { u...",
       "exports": [],
-      "lines": 151,
+      "lines": 412,
       "external": true
     },
     {
@@ -96,38 +96,6 @@
       "desc": "app/test-storage/page.tsx (UPDATED: Correct import for FileObject from storage-js; TS fix)\r\n\r\n'use c...",
       "exports": [],
       "lines": 98,
-      "external": true
-    },
-    {
-      "id": "StandardForm_tsx",
-      "category": "misc",
-      "desc": "No description found",
-      "exports": [],
-      "lines": 83,
-      "external": true
-    },
-    {
-      "id": "StandardTable_tsx",
-      "category": "misc",
-      "desc": "No description found",
-      "exports": [],
-      "lines": 55,
-      "external": true
-    },
-    {
-      "id": "TriggerForm_tsx",
-      "category": "misc",
-      "desc": "No description found",
-      "exports": [],
-      "lines": 73,
-      "external": true
-    },
-    {
-      "id": "TriggerTable_tsx",
-      "category": "misc",
-      "desc": "No description found",
-      "exports": [],
-      "lines": 55,
       "external": true
     },
     {
@@ -516,19 +484,55 @@
     },
     {
       "source": "page_tsx",
+      "target": "components_ui_button",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_input",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_label",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_table",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_textarea",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_alert-dialog",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
       "target": "components_ui_card",
       "type": "import",
       "weight": 5
     },
     {
       "source": "page_tsx",
-      "target": "components_ui_accordion",
+      "target": "components_ui_select",
       "type": "import",
       "weight": 5
     },
     {
       "source": "page_tsx",
-      "target": "components_ui_button",
+      "target": "components_ui_checkbox",
       "type": "import",
       "weight": 5
     },
@@ -546,31 +550,13 @@
     },
     {
       "source": "page_tsx",
-      "target": "components_admin_TriggerForm",
+      "target": "react-hot-toast",
       "type": "import",
       "weight": 5
     },
     {
       "source": "page_tsx",
-      "target": "components_admin_StandardForm",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_admin_TriggerTable",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "components_admin_StandardTable",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "page_tsx",
-      "target": "insertTrigger",
+      "target": "fetch",
       "type": "call",
       "weight": 8
     },
@@ -582,19 +568,25 @@
     },
     {
       "source": "page_tsx",
+      "target": "insertTrigger",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "page_tsx",
       "target": "deleteTrigger",
       "type": "call",
       "weight": 8
     },
     {
       "source": "page_tsx",
-      "target": "insertStandard",
+      "target": "updateStandard",
       "type": "call",
       "weight": 8
     },
     {
       "source": "page_tsx",
-      "target": "updateStandard",
+      "target": "insertStandard",
       "type": "call",
       "weight": 8
     },
@@ -925,114 +917,6 @@
     {
       "source": "page_tsx",
       "target": "components_ui_alert",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardForm_tsx",
-      "target": "components_ui_input",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardForm_tsx",
-      "target": "components_ui_label",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardForm_tsx",
-      "target": "components_ui_textarea",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardForm_tsx",
-      "target": "components_ui_button",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardForm_tsx",
-      "target": "components_ui_select",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardForm_tsx",
-      "target": "components_ui_checkbox",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardTable_tsx",
-      "target": "components_ui_table",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardTable_tsx",
-      "target": "components_ui_button",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "StandardTable_tsx",
-      "target": "components_ui_alert-dialog",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerForm_tsx",
-      "target": "components_ui_input",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerForm_tsx",
-      "target": "components_ui_label",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerForm_tsx",
-      "target": "components_ui_textarea",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerForm_tsx",
-      "target": "components_ui_button",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerForm_tsx",
-      "target": "components_ui_select",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerForm_tsx",
-      "target": "components_ui_checkbox",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerTable_tsx",
-      "target": "components_ui_table",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerTable_tsx",
-      "target": "components_ui_button",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "TriggerTable_tsx",
-      "target": "components_ui_alert-dialog",
       "type": "import",
       "weight": 5
     },
@@ -1698,8 +1582,8 @@
     }
   ],
   "stats": {
-    "nodeCount": 53,
-    "edgeCount": 200,
-    "avgLines": 64.01886792452831
+    "nodeCount": 49,
+    "edgeCount": 186,
+    "avgLines": 69.14285714285714
   }
 }

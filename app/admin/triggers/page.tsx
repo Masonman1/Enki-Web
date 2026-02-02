@@ -1,151 +1,412 @@
 // app/admin/triggers/page.tsx
-'use client';  // Client Component (hooks/effects)
-
+'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/use-auth';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';  // FIXED: Added missing Button import
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useTriggers } from '@/lib/use-triggers';
 import { useStandards } from '@/lib/use-standards';
-import TriggerForm from '@/components/admin/TriggerForm';
-import StandardForm from '@/components/admin/StandardForm';
-import TriggerTable from '@/components/admin/TriggerTable';
-import StandardTable from '@/components/admin/StandardTable';
+import toast from 'react-hot-toast';
 
 export default function TriggersAdmin() {
   const { session, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger, fetchTriggers } = useTriggers();
-  const { standards, loading: standardsLoading, insertStandard, updateStandard, deleteStandard, fetchStandards } = useStandards();
-
-  const [newTrigger, setNewTrigger] = useState({ trigger_name: '', description: '', patterns: {}, clause_template: '' });
-  const [editingTrigger, setEditingTrigger] = useState(null);
-  const [newStd, setNewStd] = useState({ standard_name: '', description: '', category: '', applicable_to: [] });
-  const [editingStd, setEditingStd] = useState(null);
-  const [showStandardsForm, setShowStandardsForm] = useState(false);
-
+  // All hook calls moved to top (before any early returns)
+  const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger } = useTriggers();
+  const { standards, loading: standardsLoading, insertStandard, updateStandard, deleteStandard } = useStandards();  // Removed fetchStandards
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [triggerRewrite, setTriggerRewrite] = useState('');
+  const [clauseRewrite, setClauseRewrite] = useState('');
+  const [suggestedName, setSuggestedName] = useState('');
+  const defaultFormData = {
+    title: '',
+    csi_code: '',
+    keywords: '',
+    category: '',
+    threshold: '',
+    exclusions: '',
+    receipt_conditions: '',
+    details: '',
+    selected_standards: [] as string[],
+  };
+  const [formData, setFormData] = useState(defaultFormData);
+  const [stdForm, setStdForm] = useState({
+    id: '',
+    standard_name: '',
+    description: '',
+    category: '',
+    applicable_to: '',
+  });
+  const [editingStdId, setEditingStdId] = useState<string | null>(null);  // Removed isEditingStd
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  // Effects also at top
   useEffect(() => {
-    console.log('TriggersAdmin mount: authLoading?', authLoading, 'session?', !!session);  // DEBUG
-    if (authLoading) return;
-    if (!session) {
-      console.log('TriggersAdmin: No session - redirecting to /');  // DEBUG
-      router.push('/');
+    if (authLoading || !session) {
+      if (!authLoading) router.push('/');
       return;
     }
-    fetchTriggers();
-    fetchStandards();
-  }, [authLoading, session, router, fetchTriggers, fetchStandards]);
-
-  const handleAddTrigger = async () => {
-    await insertTrigger(newTrigger);
-    setNewTrigger({ trigger_name: '', description: '', patterns: {}, clause_template: '' });
+  }, [authLoading, session, router]);
+  // Early return now after all hooks
+  if (authLoading || triggersLoading || standardsLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
+  const toggleSection = (section: string) => {
+    setOpenSection((prev) => (prev === section ? null : section));
   };
-
-  const handleUpdateTrigger = async () => {
-    await updateTrigger(editingTrigger.id, newTrigger);
-    setEditingTrigger(null);
-    setNewTrigger({ trigger_name: '', description: '', patterns: {}, clause_template: '' });
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const handleEditTrigger = (trigger) => {
-    setNewTrigger(trigger);
-    setEditingTrigger(trigger);
+  const handleStdChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setStdForm({ ...stdForm, [e.target.name]: e.target.value });
   };
-
-  const handleCancelEdit = () => {
-    setEditingTrigger(null);
-    setNewTrigger({ trigger_name: '', description: '', patterns: {}, clause_template: '' });
+  const handleCheckboxChange = (id: string) => {
+  setFormData((prev) => ({
+    ...prev,
+    selected_standards: prev.selected_standards.includes(id)
+      ? prev.selected_standards.filter((s) => s !== id)
+      : [...prev.selected_standards, id],
+  }));
+};
+  const handleGenerate = async () => {  // Removed e.preventDefault() since no form
+    try {
+      const body = {
+        ...formData,
+        selected_standards: formData.selected_standards,
+      };
+      const res = await fetch('/api/ai-rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('AI rewrite failed');
+      const { trigger_rewrite, clause_rewrite, suggested_name } = await res.json();
+      setTriggerRewrite(trigger_rewrite);
+      setClauseRewrite(clause_rewrite);
+      setSuggestedName(suggested_name);
+      toast.success('Rewrite generated');
+    } catch (err) {
+      toast.error('Generate failed');
+      console.error(err);
+    }
   };
-
-  const handleDeleteTrigger = async (id) => {
+const handleCommit = async () => {
+  if (!suggestedName && !formData.title) return toast.error('Provide a name');
+  const triggerData = {
+    trigger_name: formData.title || suggestedName,
+    description: formData.details,
+    patterns: { ...formData },
+    clause_template: clauseRewrite,
+  };
+  try {
+    if (editingId) {
+      await updateTrigger(editingId, triggerData);
+      setEditingId(null);
+    } else {
+      await insertTrigger(triggerData);
+    }
+    handleClear();
+    toast.success('Trigger committed!');
+  } catch (err) {
+    toast.error('Commit failed');
+    console.error(err);
+  }
+};
+  interface Trigger {  // NEW: Type for handleEdit param
+    id: string;
+    trigger_name: string;
+    description: string;
+    patterns: Record<string, unknown>;
+    clause_template: string;
+  }
+const handleEdit = (trigger: Trigger) => {
+  console.log('Editing trigger patterns:', trigger.patterns); // DEBUG: Verify patterns jsonb
+  setEditingId(trigger.id);
+  const patterns = trigger.patterns || {}; // Fallback empty object
+  setFormData({
+    ...defaultFormData,
+    title: patterns.title || trigger.trigger_name || '', // Fallback to trigger_name if missing
+    csi_code: patterns.csi_code || '',
+    keywords: patterns.keywords || '',
+    category: patterns.category || '',
+    threshold: patterns.threshold || '',
+    exclusions: patterns.exclusions || '',
+    receipt_conditions: patterns.receipt_conditions || '',
+    details: patterns.details || trigger.description || '', // Fallback to description
+    selected_standards: patterns.selected_standards || [],
+  });
+  setTriggerRewrite('');
+  setClauseRewrite(trigger.clause_template || '');
+  setSuggestedName(trigger.trigger_name || '');
+  if (openSection !== 'manage-triggers-clauses') toggleSection('manage-triggers-clauses');
+};
+  const handleDelete = async (id: string) => {
     await deleteTrigger(id);
   };
-
-  const handleAddStd = async () => {
-    await insertStandard(newStd);
-    setNewStd({ standard_name: '', description: '', category: '', applicable_to: [] });
+  const handleClear = () => {
+    setTriggerRewrite('');
+    setClauseRewrite('');
+    setSuggestedName('');
+    setFormData(defaultFormData);
+    setEditingId(null);
   };
-
-  const handleUpdateStd = async () => {
-    await updateStandard(editingStd.id, newStd);
-    setEditingStd(null);
-    setNewStd({ standard_name: '', description: '', category: '', applicable_to: [] });
+  const handleAddOrUpdateStd = async () => {  // Removed e.preventDefault() since no form
+    const applicable_to = stdForm.applicable_to.split(',').map(t => t.trim()).filter(Boolean);
+    const updates = {
+      standard_name: stdForm.standard_name,
+      description: stdForm.description,
+      category: stdForm.category,
+      applicable_to,
+    };
+    try {
+      if (editingStdId) {
+        await updateStandard(editingStdId, updates);
+      } else {
+        // NEW: Explicitly add created_by from session for ownership/RLS
+        const newStandard = {
+          ...updates,
+          created_by: session?.user?.id || '', // Fallback empty if guest/dev, but auth required for admin
+        };
+        await insertStandard(newStandard);
+      }
+      handleClearStd();
+      toast.success('Standard saved!');
+    } catch (err) {
+      toast.error('Save failed');
+      console.error(err);
+    }
   };
-
-  const handleEditStd = (std) => {
-    setNewStd(std);
-    setEditingStd(std);
+  interface Standard {  // NEW: Type for handleEditStd param
+    id: string;
+    standard_name: string;
+    description: string;
+    category: string;
+    applicable_to: string[];
+  }
+  const handleEditStd = (std: Standard) => {
+    setEditingStdId(std.id);
+    setStdForm({
+      id: std.id,
+      standard_name: std.standard_name,
+      description: std.description,
+      category: std.category,
+      applicable_to: std.applicable_to.join(', '),
+    });
   };
-
-  const handleCancelEditStd = () => {
-    setEditingStd(null);
-    setNewStd({ standard_name: '', description: '', category: '', applicable_to: [] });
-  };
-
-  const handleDeleteStd = async (id) => {
+  const handleDeleteStd = async (id: string) => {
     await deleteStandard(id);
   };
-
-  if (authLoading || triggersLoading || standardsLoading) {
-    console.log('TriggersAdmin: Still loading auth/data...');  // DEBUG
-    return <div>Loading admin...</div>;
-  }
-
+  // NEW: Clear function for standards form
+  const handleClearStd = () => {
+    setStdForm({ id: '', standard_name: '', description: '', category: '', applicable_to: '' });
+    setEditingStdId(null);
+  };
   return (
-    <div className="container mx-auto p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Triggers & Standards Admin</CardTitle>
-          <CardDescription>Manage risk triggers and waterproofing standards.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TriggerForm
-            newTrigger={newTrigger}
-            setNewTrigger={setNewTrigger}
-            editingTrigger={editingTrigger}
-            handleAddTrigger={handleAddTrigger}
-            handleUpdateTrigger={handleUpdateTrigger}
-            handleCancelEdit={handleCancelEdit}
-          />
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">Existing Triggers</h3>
-            <TriggerTable
-              triggers={triggers}
-              handleEditTrigger={handleEditTrigger}
-              handleDeleteTrigger={handleDeleteTrigger}
-            />
+    <div className="flex min-h-screen">
+      {/* Left Sidebar with Toggle Buttons */}
+      <div className="w-64 bg-muted p-4 border-r flex flex-col space-y-2">
+        <h1 className="text-xl font-bold mb-4">Admin Navigation</h1>
+        <Button variant={openSection === 'manage-triggers-clauses' ? 'default' : 'outline'} onClick={() => toggleSection('manage-triggers-clauses')}>
+          Manage Triggers and Clauses
+        </Button>
+        <Button variant={openSection === 'existing-triggers' ? 'default' : 'outline'} onClick={() => toggleSection('existing-triggers')}>
+          Existing Risk Triggers
+        </Button>
+        <Button variant={openSection === 'manage-standards' ? 'default' : 'outline'} onClick={() => toggleSection('manage-standards')}>
+          Manage Waterproofing Standards
+        </Button>
+      </div>
+      {/* Main Content Area - Starts Blank */}
+      <div className="flex-1 p-4 container mx-auto">
+        {!openSection && (
+          <div className="text-center mt-20 text-muted-foreground">
+            Select a section from the left to begin.
           </div>
-          <Accordion type="single" collapsible className="mt-6">
-            <AccordionItem value="standards">
-              <AccordionTrigger>Manage Standards</AccordionTrigger>
-              <AccordionContent>
-                {showStandardsForm ? (
-                  <StandardForm
-                    newStd={newStd}
-                    setNewStd={setNewStd}
-                    editingStd={editingStd}
-                    handleAddStd={handleAddStd}
-                    handleUpdateStd={handleUpdateStd}
-                    handleCancelEditStd={handleCancelEditStd}
-                  />
-                ) : (
-                  <Button onClick={() => setShowStandardsForm(true)}>Add New Standard</Button>  // Button usage here
-                )}
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold">Existing Standards</h3>
-                  <StandardTable
-                    standards={standards}
-                    handleEditStd={handleEditStd}
-                    handleDeleteStd={handleDeleteStd}
-                  />
+        )}
+        {/* Manage Triggers and Clauses */}
+        {openSection === 'manage-triggers-clauses' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Define Trigger Patterns</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Label>Title</Label>
+                <Input name="title" value={formData.title} onChange={handleFormChange} />
+                <Label>CSI Code</Label>
+                <Input name="csi_code" value={formData.csi_code} onChange={handleFormChange} />
+                <Label>Keywords (comma-separated)</Label>
+                <Input name="keywords" value={formData.keywords} onChange={handleFormChange} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Clause Prompt Inputs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Label>Category</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prep-exclusion">Prep-Exclusion</SelectItem>
+                    <SelectItem value="sequencing">Sequencing</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Label>Threshold (e.g., $10K)</Label>
+                <Input name="threshold" value={formData.threshold} onChange={handleFormChange} />
+                <Label>Exclusions</Label>
+                <Textarea name="exclusions" value={formData.exclusions} onChange={handleFormChange} />
+                <Label>Receipt Conditions</Label>
+                <Textarea name="receipt_conditions" value={formData.receipt_conditions} onChange={handleFormChange} />
+                <Label>Details</Label>
+                <Textarea name="details" value={formData.details} onChange={handleFormChange} />
+                <Label>Applicable Standards</Label>
+                <div className="space-y-2">
+                  {standards.map((std) => (
+                    <div key={std.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={std.id}
+                        checked={formData.selected_standards.includes(std.id)}
+                        onCheckedChange={() => handleCheckboxChange(std.id)}
+                      />
+                      <Label htmlFor={std.id}>{std.standard_name} ({std.category})</Label>
+                    </div>
+                  ))}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+            {clauseRewrite && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Generated Clause Preview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <strong>Suggested Name:</strong> {suggestedName}<br />
+                  <strong>Trigger Rewrite:</strong> {triggerRewrite}<br />
+                  <strong>Clause Rewrite:</strong> {clauseRewrite}
+                </CardContent>
+              </Card>
+            )}
+            <div className="flex space-x-4">
+              <Button type="button" onClick={handleGenerate}>Generate Rewrite</Button>
+              <Button type="button" onClick={handleCommit}>Commit Trigger</Button>
+              <Button variant="outline" type="button" onClick={handleClear}>Clear</Button>
+            </div>
+          </div>
+        )}
+        {/* Existing Risk Triggers */}
+        {openSection === 'existing-triggers' && (
+          <div className="space-y-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {triggers.map((trigger) => (
+                  <TableRow key={trigger.id}>
+                    <TableCell>{trigger.trigger_name}</TableCell>
+                    <TableCell>{trigger.description}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" onClick={() => handleEdit(trigger)}>Edit</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="ml-2">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+                            <AlertDialogDescription>Delete this trigger?</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(trigger.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        {/* Manage Waterproofing Standards */}
+        {openSection === 'manage-standards' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configure Standard</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Label>Standard Name (e.g., ASTM D4541)</Label>
+                <Input name="standard_name" value={stdForm.standard_name} onChange={handleStdChange} />
+                <Label>Description</Label>
+                <Textarea name="description" value={stdForm.description} onChange={handleStdChange} />
+                <Label>Category (e.g., substrates)</Label>
+                <Input name="category" value={stdForm.category} onChange={handleStdChange} />
+                <Label>Applicable To (comma-separated, e.g., concrete,membranes)</Label>
+                <Input name="applicable_to" value={stdForm.applicable_to} onChange={handleStdChange} />
+                <div className="flex space-x-4">
+                  <Button type="button" onClick={handleAddOrUpdateStd}>{editingStdId ? 'Update' : 'Add'} Standard</Button>
+                  <Button variant="outline" type="button" onClick={handleClearStd}>Clear</Button>
+                </div>
+              </CardContent>
+            </Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Applicable To</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {standards.map((std) => (
+                  <TableRow key={std.id}>
+                    <TableCell>{std.standard_name}</TableCell>
+                    <TableCell>{std.description}</TableCell>
+                    <TableCell>{std.category}</TableCell>
+                    <TableCell>{std.applicable_to.join(', ')}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" onClick={() => handleEditStd(std)}>Edit</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="ml-2">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+                            <AlertDialogDescription>Delete this standard?</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteStd(std.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
