@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react'; // NEW: Import for spinner
 import { useTriggers } from '@/lib/use-triggers';
 import { useStandards } from '@/lib/use-standards';
 import toast from 'react-hot-toast';
@@ -23,9 +24,9 @@ export default function TriggersAdmin() {
   const { triggers, loading: triggersLoading, insertTrigger, updateTrigger, deleteTrigger } = useTriggers();
   const { standards, loading: standardsLoading, insertStandard, updateStandard, deleteStandard } = useStandards();  // Removed fetchStandards
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [triggerRewrite, setTriggerRewrite] = useState('');
   const [clauseRewrite, setClauseRewrite] = useState('');
   const [suggestedName, setSuggestedName] = useState('');
+  const [suggestedDescription, setSuggestedDescription] = useState(''); // NEW: State for AI-generated description
   const defaultFormData = {
     title: '',
     csi_code: '',
@@ -35,7 +36,12 @@ export default function TriggersAdmin() {
     exclusions: '',
     receipt_conditions: '',
     details: '',
-    selected_standards: [] as string[],
+    clause_title: '',  // NEW: Added for PDF field
+    trigger_threshold: '',  // NEW: Added for PDF field (replaces/aliases threshold)
+    protections_exclusions: '',  // NEW: Added for PDF field (replaces/aliases exclusions)
+    selected_standards: [],  // RESTORED: Array for checkboxes, per original
+    is_general_conditions: false,  // NEW: Added for PDF checkbox
+    additional_details: '',  // NEW: Added for PDF field (replaces/aliases details)
   };
   const [formData, setFormData] = useState(defaultFormData);
   const [stdForm, setStdForm] = useState({
@@ -47,6 +53,7 @@ export default function TriggersAdmin() {
   });
   const [editingStdId, setEditingStdId] = useState<string | null>(null);  // Removed isEditingStd
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false); // NEW: State for visual indicator
   // Effects also at top
   useEffect(() => {
     if (authLoading || !session) {
@@ -67,19 +74,34 @@ export default function TriggersAdmin() {
   const handleStdChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setStdForm({ ...stdForm, [e.target.name]: e.target.value });
   };
-  const handleCheckboxChange = (id: string) => {
-  setFormData((prev) => ({
-    ...prev,
-    selected_standards: prev.selected_standards.includes(id)
-      ? prev.selected_standards.filter((s) => s !== id)
-      : [...prev.selected_standards, id],
-  }));
-};
+  const handleCheckboxChange = (id: string, checked: boolean) => {  // RESTORED: Handler for standards checkboxes (with ID param)
+    setFormData((prev) => ({
+      ...prev,
+      selected_standards: checked
+        ? [...prev.selected_standards, id]
+        : prev.selected_standards.filter((s) => s !== id),
+    }));
+  };
+  const handleGeneralConditionsChange = (checked: boolean) => {  // NEW: Separate handler for is_general_conditions (no ID)
+    setFormData((prev) => ({
+      ...prev,
+      is_general_conditions: checked,
+    }));
+  };
   const handleGenerate = async () => {  // Removed e.preventDefault() since no form
+    setGenerating(true); // NEW: Set loading true
     try {
       const body = {
         ...formData,
-        selected_standards: formData.selected_standards,
+        // Map to PDF fields for API
+        clause_title: formData.clause_title,
+        category: formData.category,
+        trigger_threshold: formData.trigger_threshold || formData.threshold,  // Alias fallback
+        protections_exclusions: formData.protections_exclusions || formData.exclusions,  // Alias fallback
+        receipt_conditions: formData.receipt_conditions,
+        standards_to_consider: formData.selected_standards.join(', '),  // RESTORED: Join array for API
+        is_general_conditions: formData.is_general_conditions,
+        additional_details: formData.additional_details || formData.details,  // Alias fallback
       };
       const res = await fetch('/api/ai-rewrite', {
         method: 'POST',
@@ -87,21 +109,23 @@ export default function TriggersAdmin() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('AI rewrite failed');
-      const { trigger_rewrite, clause_rewrite, suggested_name } = await res.json();
-      setTriggerRewrite(trigger_rewrite);
+      const { clause_rewrite, suggested_name, suggested_description } = await res.json();  // NEW: Include suggested_description
       setClauseRewrite(clause_rewrite);
       setSuggestedName(suggested_name);
+      setSuggestedDescription(suggested_description); // NEW: Set state
       toast.success('Rewrite generated');
     } catch (err) {
       toast.error('Generate failed');
       console.error(err);
+    } finally {
+      setGenerating(false); // NEW: Reset loading
     }
   };
 const handleCommit = async () => {
   if (!suggestedName && !formData.title) return toast.error('Provide a name');
   const triggerData = {
     trigger_name: formData.title || suggestedName,
-    description: formData.details,
+    description: suggestedDescription || formData.details, // NEW: Use AI summary or fallback to details
     patterns: { ...formData },
     clause_template: clauseRewrite,
   };
@@ -140,11 +164,17 @@ const handleEdit = (trigger: Trigger) => {
     exclusions: patterns.exclusions || '',
     receipt_conditions: patterns.receipt_conditions || '',
     details: patterns.details || trigger.description || '', // Fallback to description
-    selected_standards: patterns.selected_standards || [],
+    clause_title: patterns.clause_title || '',  // NEW
+    trigger_threshold: patterns.trigger_threshold || patterns.threshold || '',  // NEW with alias
+    protections_exclusions: patterns.protections_exclusions || patterns.exclusions || '',  // NEW with alias
+    selected_standards: patterns.selected_standards || [],  // RESTORED: Array for checkboxes
+    is_general_conditions: patterns.is_general_conditions ?? false,  // NEW
+    additional_details: patterns.additional_details || patterns.details || '',  // NEW with alias
   });
   setTriggerRewrite('');
   setClauseRewrite(trigger.clause_template || '');
   setSuggestedName(trigger.trigger_name || '');
+  setSuggestedDescription(trigger.description || ''); // NEW: Load existing description
   if (openSection !== 'manage-triggers-clauses') toggleSection('manage-triggers-clauses');
 };
   const handleDelete = async (id: string) => {
@@ -154,6 +184,7 @@ const handleEdit = (trigger: Trigger) => {
     setTriggerRewrite('');
     setClauseRewrite('');
     setSuggestedName('');
+    setSuggestedDescription(''); // NEW: Clear description
     setFormData(defaultFormData);
     setEditingId(null);
   };
@@ -224,106 +255,131 @@ const handleEdit = (trigger: Trigger) => {
         </Button>
       </div>
       {/* Main Content Area - Starts Blank */}
-      <div className="flex-1 p-4 container mx-auto">
-        {!openSection && (
-          <div className="text-center mt-20 text-muted-foreground">
-            Select a section from the left to begin.
-          </div>
-        )}
-        {/* Manage Triggers and Clauses */}
-        {openSection === 'manage-triggers-clauses' && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Define Trigger Patterns</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Label>Title</Label>
-                <Input name="title" value={formData.title} onChange={handleFormChange} />
-                <Label>CSI Code</Label>
-                <Input name="csi_code" value={formData.csi_code} onChange={handleFormChange} />
-                <Label>Keywords (comma-separated)</Label>
-                <Input name="keywords" value={formData.keywords} onChange={handleFormChange} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Clause Prompt Inputs</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Label>Category</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="prep-exclusion">Prep-Exclusion</SelectItem>
-                    <SelectItem value="sequencing">Sequencing</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Label>Threshold (e.g., $10K)</Label>
-                <Input name="threshold" value={formData.threshold} onChange={handleFormChange} />
-                <Label>Exclusions</Label>
-                <Textarea name="exclusions" value={formData.exclusions} onChange={handleFormChange} />
-                <Label>Receipt Conditions</Label>
-                <Textarea name="receipt_conditions" value={formData.receipt_conditions} onChange={handleFormChange} />
-                <Label>Details</Label>
-                <Textarea name="details" value={formData.details} onChange={handleFormChange} />
-                <Label>Applicable Standards</Label>
-                <div className="space-y-2">
-                  {standards.map((std) => (
-                    <div key={std.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={std.id}
-                        checked={formData.selected_standards.includes(std.id)}
-                        onCheckedChange={() => handleCheckboxChange(std.id)}
-                      />
-                      <Label htmlFor={std.id}>{std.standard_name} ({std.category})</Label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            {clauseRewrite && (
+      <div className="flex-1 p-4 container mx-auto flex"> {/* UPDATED: Add flex for side-by-side */}
+        <div className="flex-1"> {/* UPDATED: Main content flex-1 (with left = fixed w-64, this makes left + main ~60% assuming screen width) */}
+          {!openSection && (
+            <div className="text-center mt-20 text-muted-foreground">
+              Select a section from the left to begin.
+            </div>
+          )}
+          {/* Manage Triggers and Clauses */}
+          {openSection === 'manage-triggers-clauses' && (
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Generated Clause Preview</CardTitle>
+                  <CardTitle>Define Trigger Patterns</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <strong>Suggested Name:</strong> {suggestedName}<br />
-                  <strong>Trigger Rewrite:</strong> {triggerRewrite}<br />
-                  <strong>Clause Rewrite:</strong> {clauseRewrite}
+                <CardContent className="space-y-4">
+                  <Label>Title</Label>
+                  <Input name="title" value={formData.title} onChange={handleFormChange} />
+                  <Label>CSI Code</Label>
+                  <Input name="csi_code" value={formData.csi_code} onChange={handleFormChange} />
+                  <Label>Keywords (comma-separated)</Label>
+                  <Input name="keywords" value={formData.keywords} onChange={handleFormChange} />
                 </CardContent>
               </Card>
-            )}
-            <div className="flex space-x-4">
-              <Button type="button" onClick={handleGenerate}>Generate Rewrite</Button>
-              <Button type="button" onClick={handleCommit}>Commit Trigger</Button>
-              <Button variant="outline" type="button" onClick={handleClear}>Clear</Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Clause Prompt Inputs</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Label>Clause Title</Label>  {/* NEW: Inserted for PDF field */}
+                  <Input name="clause_title" value={formData.clause_title} onChange={handleFormChange} />  {/* NEW: Inserted for PDF field */}
+                  <div className="flex items-center space-x-2">  {/* NEW: Inserted wrapper for checkbox */}
+                    <Checkbox
+                      id="is_general_conditions"
+                      checked={formData.is_general_conditions}
+                      onCheckedChange={handleGeneralConditionsChange}
+                    />
+                    <Label htmlFor="is_general_conditions">Is General Conditions?</Label>
+                  </div>  {/* NEW: Inserted checkbox for PDF field */}
+                  <Label>Clause Category</Label>  {/* UPDATED: Renamed label to match PDF */}
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prep-exclusion">Prep Exclusion</SelectItem>  {/* UPDATED: Options to match PDF */}
+                      <SelectItem value="price-escalation-tariff">Price Escalation / Tariff</SelectItem>  {/* NEW: Inserted option */}
+                      <SelectItem value="delay-or-site-condition">Delay or Site Condition</SelectItem>  {/* NEW: Inserted option */}
+                      <SelectItem value="indemnity-limitation">Indemnity Limitation</SelectItem>  {/* NEW: Inserted option */}
+                      <SelectItem value="general-other">General / Other</SelectItem>  {/* NEW: Inserted option */}
+                    </SelectContent>
+                  </Select>
+                  <Label>Trigger / Threshold</Label>  {/* UPDATED: Renamed label to match PDF */}
+                  <Input name="trigger_threshold" value={formData.trigger_threshold} onChange={handleFormChange} />  {/* UPDATED: Name to match PDF (aliases threshold) */}
+                  <Label>Protections and Exclusions</Label>  {/* UPDATED: Renamed label to match PDF */}
+                  <Textarea name="protections_exclusions" value={formData.protections_exclusions} onChange={handleFormChange} />  {/* UPDATED: Name to match PDF (aliases exclusions) */}
+                  <Label>Receipt Conditions</Label>
+                  <Textarea name="receipt_conditions" value={formData.receipt_conditions} onChange={handleFormChange} />
+                  <Label>Additional Details</Label>  {/* UPDATED: Renamed label to match PDF */}
+                  <Textarea name="additional_details" value={formData.additional_details} onChange={handleFormChange} />  {/* UPDATED: Name to match PDF (aliases details) */}
+                  <Label>Standards to Consider</Label>  {/* RESTORED: Label for checkboxes */}
+                  <div className="space-y-2">  {/* RESTORED: Wrapper for checkboxes */}
+                    {standards.map((std) => (
+                      <div key={std.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`std-${std.id}`}
+                          checked={formData.selected_standards.includes(std.id)}
+                          onCheckedChange={(checked) => handleCheckboxChange(std.id, checked)}
+                        />
+                        <Label htmlFor={`std-${std.id}`}>{std.standard_name}</Label>
+                      </div>
+                    ))}
+                  </div>  {/* RESTORED: Mapped checkboxes from standards */}
+                </CardContent>
+              </Card>
+              {clauseRewrite && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Generated Clause Preview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <strong>Suggested Name:</strong> {suggestedName}<br />
+                    <strong>Suggested Description:</strong> <br />
+                    <Textarea 
+                      ref={descriptionRef} // NEW: Attach ref
+                      value={suggestedDescription} 
+                      readOnly 
+                      className="mt-1 resize-none overflow-hidden border-none bg-transparent p-0" // FIXED: No border/padding for seamless; no horizontal scroll
+                      onChange={() => {}} // Placeholder
+                    /> {/* NEW: Use Textarea for vertical expand */}
+                    <strong>Clause Rewrite:</strong> {clauseRewrite}
+                  </CardContent>
+                </Card>
+              )}
+              <div className="flex space-x-4">
+                <Button type="button" onClick={handleGenerate} disabled={generating}>  {/* NEW: Disable during generating */}
+                  {generating ? (
+                    <span className="flex items-center">
+                      <Loader2 className="animate-spin mr-2 h-4 w-4" /> Generating...
+                    </span>
+                  ) : (
+                    'Generate Rewrite'
+                  )}
+                </Button>
+                <Button type="button" onClick={handleCommit}>Commit Trigger</Button>
+                <Button variant="outline" type="button" onClick={handleClear}>Clear</Button>
+              </div>
             </div>
-          </div>
-        )}
-        {/* Existing Risk Triggers */}
-        {openSection === 'existing-triggers' && (
-          <div className="space-y-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          )}
+          {/* Existing Risk Triggers */}
+          {openSection === 'existing-triggers' && (
+            <div className="space-y-6">
+              <div className="space-y-4"> {/* NEW: Wrapper for card list */}
                 {triggers.map((trigger) => (
-                  <TableRow key={trigger.id}>
-                    <TableCell>{trigger.trigger_name}</TableCell>
-                    <TableCell>{trigger.description}</TableCell>
-                    <TableCell>
+                  <Card key={trigger.id}>
+                    <CardHeader>
+                      <CardTitle>{trigger.trigger_name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="whitespace-pre-wrap break-words">{trigger.clause_template}</p> {/* NEW: Full clause text with word-wrap */}
+                    </CardContent>
+                    <CardFooter className="flex space-x-4">
                       <Button variant="outline" onClick={() => handleEdit(trigger)}>Edit</Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="ml-2">Delete</Button>
+                          <Button variant="destructive">Delete</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
@@ -336,76 +392,62 @@ const handleEdit = (trigger: Trigger) => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                    </TableCell>
-                  </TableRow>
+                    </CardFooter>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-        {/* Manage Waterproofing Standards */}
-        {openSection === 'manage-standards' && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configure Standard</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Label>Standard Name (e.g., ASTM D4541)</Label>
-                <Input name="standard_name" value={stdForm.standard_name} onChange={handleStdChange} />
-                <Label>Description</Label>
-                <Textarea name="description" value={stdForm.description} onChange={handleStdChange} />
-                <Label>Category (e.g., substrates)</Label>
-                <Input name="category" value={stdForm.category} onChange={handleStdChange} />
-                <Label>Applicable To (comma-separated, e.g., concrete,membranes)</Label>
-                <Input name="applicable_to" value={stdForm.applicable_to} onChange={handleStdChange} />
-                <div className="flex space-x-4">
-                  <Button type="button" onClick={handleAddOrUpdateStd}>{editingStdId ? 'Update' : 'Add'} Standard</Button>
-                  <Button variant="outline" type="button" onClick={handleClearStd}>Clear</Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Applicable To</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {standards.map((std) => (
-                  <TableRow key={std.id}>
-                    <TableCell>{std.standard_name}</TableCell>
-                    <TableCell>{std.description}</TableCell>
-                    <TableCell>{std.category}</TableCell>
-                    <TableCell>{std.applicable_to.join(', ')}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" onClick={() => handleEditStd(std)}>Edit</Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="ml-2">Delete</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
-                            <AlertDialogDescription>Delete this standard?</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteStd(std.id)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
+              </div>
+            </div>
+          )}
+          {/* Manage Waterproofing Standards */}
+          {openSection === 'manage-standards' && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configure Standard</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Label>Standard Name (e.g., ASTM D4541)</Label>
+                  <Input name="standard_name" value={stdForm.standard_name} onChange={handleStdChange} />
+                  <Label>Description</Label>
+                  <Textarea name="description" value={stdForm.description} onChange={handleStdChange} />
+                  <Label>Category (e.g., substrates)</Label>
+                  <Input name="category" value={stdForm.category} onChange={handleStdChange} />
+                  <Label>Applicable To (comma-separated, e.g., concrete,membranes)</Label>
+                  <Input name="applicable_to" value={stdForm.applicable_to} onChange={handleStdChange} />
+                  <div className="flex space-x-4">
+                    <Button type="button" onClick={handleAddOrUpdateStd}>{editingStdId ? 'Update' : 'Add'} Standard</Button>
+                    <Button variant="outline" type="button" onClick={handleClearStd}>Clear</Button>
+                  </div>
+                </CardContent>
+              </Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Applicable To</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {standards.map((std) => (<TableRow key={std.id}><TableCell>{std.standard_name}</TableCell><TableCell>{std.description}</TableCell><TableCell>{std.category}</TableCell><TableCell>{std.applicable_to.join(', ')}</TableCell><TableCell><Button variant="outline" onClick={() => handleEditStd(std)}>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" className="ml-2">Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Delete</AlertDialogTitle><AlertDialogDescription>Delete this standard?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteStd(std.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>))} {/* FIXED: Compact JSX to avoid whitespace text nodes in <TableBody> */}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+        {/* NEW: Placeholder right div for future "More Information" */}
+        <div className="w-[40%] bg-muted p-4 border-l"> 
+          <Card>
+            <CardHeader>
+              <CardTitle>More Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Help files and additional details will be added here in future updates.</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

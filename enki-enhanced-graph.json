@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-02T16:27:26.067Z",
+  "generated_at": "2026-02-05T17:00:54.471Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -29,7 +29,7 @@
       "category": "misc",
       "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\nimport { useState, useEffect } from 'react';\r\nimport { u...",
       "exports": [],
-      "lines": 412,
+      "lines": 454,
       "external": true
     },
     {
@@ -37,7 +37,7 @@
       "category": "misc",
       "desc": "app/api/ai-rewrite/route.ts\r\nimport { NextRequest, NextResponse } from 'next/server';\r\nimport OpenAI...",
       "exports": [],
-      "lines": 94,
+      "lines": 149,
       "external": true
     },
     {
@@ -379,12 +379,12 @@
     {
       "id": "trigger-rewrite_ts",
       "category": "misc",
-      "desc": "lib/prompts/trigger-rewrite.ts\r\nexport interface ClausePromptParams {\r\n  triggerContext: string;   /...",
+      "desc": "lib/prompts/trigger-rewrite.ts\r\nexport interface ClausePromptParams {\r\n  clause_title?: string;\r\n  c...",
       "exports": [
         "ClausePromptParams",
         "composeClausePrompt"
       ],
-      "lines": 33,
+      "lines": 49,
       "external": true
     },
     {
@@ -538,6 +538,12 @@
     },
     {
       "source": "page_tsx",
+      "target": "lucide-react",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
       "target": "lib_use-triggers",
       "type": "import",
       "weight": 7
@@ -605,6 +611,12 @@
     {
       "source": "route_ts",
       "target": "openai",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "route_ts",
+      "target": "@supabase_supabase-js",
       "type": "import",
       "weight": 5
     },
@@ -1583,7 +1595,7 @@
   ],
   "stats": {
     "nodeCount": 49,
-    "edgeCount": 186,
-    "avgLines": 69.14285714285714
+    "edgeCount": 188,
+    "avgLines": 71.44897959183673
   }
 }

@@ -11,6 +11,7 @@ graph TD
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_select
   page_tsx -->|import w5| components_ui_checkbox
+  page_tsx -->|import w5| lucide-react
   page_tsx -->|import w7| lib_use-triggers
   page_tsx -->|import w7| lib_use-standards
   page_tsx -->|import w5| react-hot-toast
@@ -23,6 +24,7 @@ graph TD
   page_tsx -->|call w8| deleteStandard
   route_ts -->|import w5| next_server
   route_ts -->|import w5| openai
+  route_ts -->|import w5| @supabase_supabase-js
   route_ts -->|import w7| lib_prompts_trigger-rewrite
   route_ts -->|import w5| next_server
   route_ts -->|import w7| lib_ai-actions

@@ -38,10 +38,10 @@ export function useTriggers() {
     fetchTriggers();
   }, [fetchTriggers]);
 
-  async function insertTrigger(newTrigger: Omit<Trigger, 'id' | 'created_at' | 'updated_at'>) {
+  async function insertTrigger(triggerData: Partial<Trigger>) {
     if (!supabase) return;
     try {
-      const { error } = await supabase.from('risk_triggers').insert(newTrigger);
+      const { error } = await supabase.from('risk_triggers').insert(triggerData);
       if (error) throw error;
       toast.success('Trigger added');
       fetchTriggers();
