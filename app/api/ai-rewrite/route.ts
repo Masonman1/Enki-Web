@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const params: ClausePromptParams = { triggerContext, userContext };
     const initialPrompt = composeClausePrompt(params);
 
-    let messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'user', content: initialPrompt },
     ];
 
@@ -135,12 +135,6 @@ export async function POST(req: NextRequest) {
     console.error('AI rewrite error:', message);
 
     // Fallback using body if available
-    const body = await req.json() as RewriteBody; // Re-parse if needed
-    const csi = body.csi_code || 'unknown';
-    const keywordsList = body.keywords ? body.keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
-    const keywordsCondition = keywordsList.length > 0 
-      ? keywordsList.join("' OR scope_item contains '")
-      : 'unknown';
     const clause_rewrite = `Exhibit: The General Contractor shall indemnify and hold harmless the Subcontractor from any and all claims, losses, or delays arising from unknown, pursuant to applicable building codes and subcontractor agreements. Subcontractor entitled to equitable adjustment for additional costs.`;
     const suggested_name = 'unknown_trigger';
 
