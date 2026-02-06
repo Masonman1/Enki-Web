@@ -1,7 +1,4 @@
-// app/page.tsx (UPDATED: Moved all useState and useEffect hooks to top-level before early return to resolve react-hooks/rules-of-hooks lint errors)
-// Note: Hooks now unconditional; early return for authLoading follows after all hook calls
-// Additional: Use toast.promise in handleSubmit for loading feedback during auth (masks redirect delay)
-
+// app/page.tsx (UPDATED: Switched to Sonner for toasts; promise-based feedback for auth)
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -14,29 +11,28 @@ import { useSupabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "sonner"; // NEW: Sonner for reliable toasts
 
 export default function Home() {
-  const { session, loading: authLoading } = useAuth(); // Top-level hook
-  const supabase = useSupabase(); // Top-level hook
-  const router = useRouter(); // Top-level hook
-  const [email, setEmail] = useState(""); // Moved to top
-  const [password, setPassword] = useState(""); // Moved to top
-  const [error, setError] = useState<string | null>(null); // Moved to top
-  const [loading, setLoading] = useState(false); // Moved to top
-  const [isSignUp, setIsSignUp] = useState(false); // Moved to top
+  const { session, loading: authLoading } = useAuth();
+  const supabase = useSupabase();
+  const router = useRouter();
+
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    if (session && !authLoading) {
+    if (authLoading || !supabase || !userId) return;
+
+    if (session) {
       router.push('/dashboard');
     }
-  }, [session, authLoading, router]); // Top-level effect
+  }, [session, authLoading, supabase, userId, router]);
 
-  if (authLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  }
-
-  console.log('Home page rendering—path:', window.location.pathname); // Debug log (remove post-test)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,54 +40,42 @@ export default function Home() {
     setError(null);
 
     try {
-      await toast.promise(
-        (async () => {
-          const { error } = await supabase.auth[isSignUp ? 'signUp' : 'signInWithPassword']({ email, password });
-          if (error) throw error;
-        })(),
-        {
-          loading: 'Authenticating...',
-          success: 'Logged in—redirecting!',
-          error: (err) => `Failed: ${err.message}`,
-        }
-      );
+      const { data, error } = isSignUp
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) throw error;
+      toast.success(isSignUp ? 'Sign up successful! Logging in...' : 'Sign in successful!');
       router.push('/dashboard');
-      router.refresh(); // Optional: Force dashboard hydration if needed
-    } catch (err) {
-      setError((err as Error).message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Auth failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
+  if (authLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>{isSignUp ? "Sign Up" : "Sign In"}</CardTitle>
-          <CardDescription>{isSignUp ? "Create a new account" : "Welcome back to Enki"}</CardDescription>
+          <CardDescription>Access Enki for waterproofing PM tools.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             {error && (
               <Alert variant="destructive">

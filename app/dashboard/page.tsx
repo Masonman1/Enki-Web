@@ -1,16 +1,14 @@
-// app/dashboard/page.tsx (SIMPLIFIED: Removed chat summaries/dev_logs features for Phase 1 focus; moved to future /dev dashboard)
-// Additional: Await logout fully with refresh for race fix; removed unused error state for lint clean
-
+// app/dashboard/page.tsx (UPDATED: Switched to Sonner for toasts; async logout with feedback)
 'use client';
 
-import { useEffect } from 'react'; // UPDATED: Removed unused useState (no error/loading now)
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/use-auth";
 import { useSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from 'sonner'; // NEW: Sonner for reliable toasts
 
 export default function Dashboard() {
   const { session, loading: authLoading, logout: authLogout } = useAuth();
@@ -20,21 +18,16 @@ export default function Dashboard() {
   const userId = session?.user?.id;
 
   useEffect(() => {
-    if (authLoading || !supabase || !userId) {
-      return; // UPDATED: No setLoading—simplified; early return if invalid
+    if (authLoading || !supabase || !userId) return;
+
+    if (!session) {
+      router.push('/');
     }
-    // No fetch needed—dashboard simplified; ready immediately
-  }, [supabase, userId, authLoading]);
+  }, [session, authLoading, supabase, userId, router]);
 
   const handleLogout = async () => {
-    try {
-      await authLogout(); // Await useAuth logout (which now awaits signOut)
-      router.push('/'); // Redundant but ensures
-      router.refresh(); // Force refresh
-    } catch (err) {
-      toast.error('Logout failed—check console');
-      console.error('Logout error:', err);
-    }
+    await authLogout();
+    toast.success('Logged out successfully'); // NEW: Sonner feedback
   };
 
   if (authLoading) {

@@ -21,4 +21,17 @@ export async function uploadSplitPdfs(supabase: SupabaseClient, userId: string, 
   return storagePath;
 }
 
+export async function uploadOriginalFile(supabase: SupabaseClient, userId: string, focus: string, buffer: Buffer, fileName: string): Promise<string | null> {
+  const basePath = `${focus}/user_${userId}/${uuidv4()}`;
+  const path = `${basePath}/${fileName}`;
+  const contentType = fileName.endsWith('.msg') ? 'application/vnd.ms-outlook' : 'application/octet-stream'; // Specific for .msg
+
+  const { error } = await supabase.storage.from('enki-storage').upload(path, buffer, { contentType });
+  if (error) {
+    console.error(`Upload failed for ${fileName}: ${error.message}`);
+    return null;
+  }
+  return basePath; // Return base for reference (consistent with splits)
+}
+
 // Removed updateJobRisks — no risks column in jobs; risks transient

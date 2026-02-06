@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '@/lib/supabase';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner'; // NEW: Sonner for toasts
 
 interface Trigger {
   id: string;
@@ -38,12 +38,12 @@ export function useTriggers() {
     fetchTriggers();
   }, [fetchTriggers]);
 
-  async function insertTrigger(triggerData: Partial<Trigger>) {
+  async function insertTrigger(newTrigger: Partial<Trigger>) {
     if (!supabase) return;
     try {
-      const { error } = await supabase.from('risk_triggers').insert(triggerData);
+      const { error } = await supabase.from('risk_triggers').insert(newTrigger);
       if (error) throw error;
-      toast.success('Trigger added');
+      toast.success('Trigger inserted');
       fetchTriggers();
     } catch (err) {
       toast.error('Insert failed');

@@ -14,13 +14,12 @@ graph TD
   page_tsx -->|import w5| lucide-react
   page_tsx -->|import w7| lib_use-triggers
   page_tsx -->|import w7| lib_use-standards
-  page_tsx -->|import w5| react-hot-toast
-  page_tsx -->|call w8| fetch
-  page_tsx -->|call w8| updateTrigger
+  page_tsx -->|import w5| sonner
   page_tsx -->|call w8| insertTrigger
+  page_tsx -->|call w8| updateTrigger
   page_tsx -->|call w8| deleteTrigger
-  page_tsx -->|call w8| updateStandard
   page_tsx -->|call w8| insertStandard
+  page_tsx -->|call w8| updateStandard
   page_tsx -->|call w8| deleteStandard
   route_ts -->|import w5| next_server
   route_ts -->|import w5| openai
@@ -36,12 +35,12 @@ graph TD
   page_tsx -->|import w7| lib_use-auth
   page_tsx -->|import w7| lib_supabase
   page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w5| react-hot-toast
+  page_tsx -->|import w5| sonner
   page_tsx -->|call w8| authLogout
   layout_tsx -->|import w5| next
   layout_tsx -->|import w5| next_font_google
   layout_tsx -->|import w5| components_auth-wrapper
-  layout_tsx -->|import w5| react-hot-toast
+  layout_tsx -->|import w5| sonner
   page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w5| components_ui_card
   page_tsx -->|import w5| components_ui_input
@@ -52,11 +51,12 @@ graph TD
   page_tsx -->|import w5| next_link
   page_tsx -->|import w5| react
   page_tsx -->|import w5| next_navigation
-  page_tsx -->|import w5| react-hot-toast
+  page_tsx -->|import w5| sonner
   page_tsx -->|import w7| lib_phase-hook
   page_tsx -->|import w5| components_phase-layout
   page_tsx -->|import w7| lib_phase-config
-  page_tsx -->|import w5| react-hot-toast
+  page_tsx -->|import w5| sonner
+  page_tsx -->|import w5| components_ui_button
   page_tsx -->|import w7| lib_phase-hook
   page_tsx -->|import w5| components_phase-layout
   page_tsx -->|import w7| lib_phase-config
@@ -135,29 +135,28 @@ graph TD
   textarea_tsx -->|import w7| lib_utils
   jest_config_ts -->|import w5| jest
   ai-calls_ts -->|import w5| openai
-  ai-calls_ts -->|import w5| pdf-parse
   ai-calls_ts -->|import w7| lib_prompts_phase1a_essentials
   ai-calls_ts -->|import w7| lib_prompts_phase1a_split-prompts
-  ai-calls_ts -->|import w7| lib_prompts_phase1a_risk-prompts
-  ai-calls_ts -->|call w8| pdf
-  pdf-utils_ts -->|import w5| pdf-parse
-  pdf-utils_ts -->|import w5| pdf-lib
-  pdf-utils_ts -->|call w8| pdf
+  file-utils_ts -->|import w5| pdf-parse
+  file-utils_ts -->|import w5| pdf-lib
+  file-utils_ts -->|import w5| @kenjiuno_msgreader
+  file-utils_ts -->|call w8| pdf
   storage-utils_ts -->|import w5| @supabase_supabase-js
   storage-utils_ts -->|import w5| uuid
   ai-actions_ts -->|import w5| @supabase_supabase-js
-  ai-actions_ts -->|import w7| lib_ai-actions_pdf-utils
+  ai-actions_ts -->|import w7| lib_ai-actions_file-utils
   ai-actions_ts -->|import w7| lib_ai-actions_ai-calls
   ai-actions_ts -->|import w7| lib_ai-actions_storage-utils
   ai-actions_ts -->|import w7| lib_ai-actions_error-utils
   ai-actions_ts -->|call w8| fetch
   ai-actions_ts -->|call w8| extractPdfText
+  ai-actions_ts -->|call w8| extractMsgText
   ai-actions_ts -->|call w8| callAiForEssentials
   ai-actions_ts -->|call w8| callAiForSplits
   ai-actions_ts -->|call w8| splitPdfByRanges
-  ai-actions_ts -->|call w8| callAiForRisks
+  ai-actions_ts -->|call w8| extractPdfText
   ai-actions_ts -->|call w8| uploadSplitPdfs
-  ai-actions_ts -->|call w8| updateJobRisks
+  ai-actions_ts -->|call w8| uploadOriginalFile
   ai-parse_ts -->|call w8| fetch
   phase-config_ts -->|import w7| lib_phase-hook
   phase-hook_ts -->|import w5| @supabase_supabase-js
@@ -166,7 +165,7 @@ graph TD
   phase-hook_ts -->|import w7| lib_supabase
   phase-hook_ts -->|import w7| lib_ai-parse
   phase-hook_ts -->|import w7| lib_ai-generate
-  phase-hook_ts -->|import w5| react-hot-toast
+  phase-hook_ts -->|import w5| sonner
   phase-hook_ts -->|import w5| uuid
   phase-hook_ts -->|import w5| @supabase_supabase-js
   phase-hook_ts -->|call w8| parseFiles
@@ -177,13 +176,13 @@ graph TD
   use-auth_ts -->|import w5| next_navigation
   use-auth_ts -->|import w7| lib_supabase
   use-auth_ts -->|import w5| @supabase_supabase-js
-  use-auth_ts -->|import w5| react-hot-toast
+  use-auth_ts -->|import w5| sonner
   use-standards_ts -->|import w5| react
   use-standards_ts -->|import w7| lib_supabase
-  use-standards_ts -->|import w5| react-hot-toast
+  use-standards_ts -->|import w5| sonner
   use-triggers_ts -->|import w5| react
   use-triggers_ts -->|import w7| lib_supabase
-  use-triggers_ts -->|import w5| react-hot-toast
+  use-triggers_ts -->|import w5| sonner
   utils_ts -->|import w5| clsx
   utils_ts -->|import w5| tailwind-merge
   next_config_ts -->|import w5| next
@@ -197,7 +196,7 @@ graph TD
   page_tsx["page_tsx (misc, ext) - app/phase1b/page.tsx..."]
   page_tsx["page_tsx (misc, ext) - app/test-storage/pag..."]
   auth-wrapper_tsx["auth-wrapper_tsx (misc, ext) - components/auth-wrap..."]
-  upload-zone_tsx["upload-zone_tsx (misc, ext) - Client component for..."]
+  upload-zone_tsx["upload-zone_tsx (misc, ext) - components/forms/upl..."]
   header_tsx["header_tsx (misc, ext) - components/layout/he..."]
   phase-layout_tsx["phase-layout_tsx (misc, ext) - components/phase-lay..."]
   accordion_tsx["accordion_tsx (misc, ext) - No description found..."]
@@ -216,15 +215,15 @@ graph TD
   jest_setup_ts["jest_setup_ts (misc, ext) - No description found..."]
   ai-calls_ts["ai-calls_ts (misc, ext) - lib/ai-actions/ai-ca..."]
   error-utils_ts["error-utils_ts (misc, ext) - lib/ai-actions/error..."]
+  file-utils_ts["file-utils_ts (misc, ext) - lib/ai-actions/file-..."]
   pdf-parse_d_ts["pdf-parse_d_ts (misc, ext) - NEW FILE: lib/ai-act..."]
-  pdf-utils_ts["pdf-utils_ts (misc, ext) - lib/ai-actions/pdf-u..."]
   storage-utils_ts["storage-utils_ts (misc, ext) - lib/ai-actions/stora..."]
   ai-actions_ts["ai-actions_ts (misc, ext) - lib/ai-actions.ts (r..."]
   ai-generate_ts["ai-generate_ts (misc, ext) - lib/ai-generate.ts
 ..."]
   ai-parse_ts["ai-parse_ts (misc, ext) - lib/ai-parse.ts (upd..."]
   phase-config_ts["phase-config_ts (misc, ext) - lib/phase-config.ts ..."]
-  phase-hook_ts["phase-hook_ts (misc, ext) - lib/phase-hook.ts (U..."]
+  phase-hook_ts["phase-hook_ts (misc, ext) - lib/phase-hook.ts (S..."]
   essentials_ts["essentials_ts (misc, ext) - lib/prompts/phase1a/..."]
   risk-prompts_ts["risk-prompts_ts (misc, ext) - lib/prompts/phase1a/..."]
   split-prompts_ts["split-prompts_ts (misc, ext) - lib/prompts/phase1a/..."]

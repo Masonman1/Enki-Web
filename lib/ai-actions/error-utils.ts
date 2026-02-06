@@ -14,7 +14,6 @@ export interface ParsedJob {  // NEW: Add 'export' keyword
   architect_address: string | null;
   scope_of_work: string | null;
   splits: Record<string, string>;
-  risks: string[];
   storage_path: string | null;
   error_msg?: string;
 }
@@ -33,7 +32,6 @@ export function createFallbackParsed(errorMsg: string): ParsedJob {
     architect_address: null,
     scope_of_work: null,
     splits: {},
-    risks: [],
     storage_path: null,
     error_msg: `Overall error: ${errorMsg}`
   };

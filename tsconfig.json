@@ -29,7 +29,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "node_modules/react-hot-toast/dist/index.d.ts"
   ],
   "exclude": [
     "node_modules",

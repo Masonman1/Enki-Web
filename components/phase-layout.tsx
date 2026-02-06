@@ -18,35 +18,34 @@ interface PhaseLayoutProps {
   error: string | null;
   risks: string[];
   generatedItems: string[];
-  parsedEssentials?: Record<string, unknown>; // Optional for phases like 1A
+  parsedEssentials?: Record<string, unknown>; // Optional for phase-specific display
   handleUpload: (files: File[]) => void;
-  generateType: 'exhibits' | 'clauses' | 'notes' | 'packages'; // From ai-generate
-  // Removed: context?: { jurisdiction?: string; materialType?: string; leadTime?: number };
-  onEmailClick?: () => void; // Optional custom handler
-  children?: ReactNode; // For phase-specific extensions
+  generateType: 'exhibits' | 'clauses' | 'notes' | 'packages';
+  onEmailClick: () => void;
+  children?: ReactNode;
+  uploading: boolean; // NEW: For passing to UploadZone
 }
 
 export default function PhaseLayout({
   title,
   description,
-  loading, // Use for full guard/spinner (covers init + uploading via hook)
+  loading,
   error,
   risks,
   generatedItems,
-  parsedEssentials,
+  parsedEssentials = {},
   handleUpload,
   generateType,
-  onEmailClick = () => toast.success(`Stub: One-click email ${generateType}`), // Default stub
+  onEmailClick,
   children,
+  uploading,
 }: PhaseLayoutProps) {
   const router = useRouter();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin mr-2" /> Initializing Phase 1A...
+    </div>;
   }
 
   return (
@@ -57,31 +56,31 @@ export default function PhaseLayout({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <UploadZone onUpload={handleUpload} />
-
           {error && (
-            <Alert variant="destructive" className="mt-4">
+            <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          {parsedEssentials && (
-            <div className="mt-4">
+          <UploadZone onUpload={handleUpload} uploading={uploading} />
+
+          {Object.keys(parsedEssentials).length > 0 && (
+            <div className="mt-6">
               <h3 className="text-lg font-semibold">Parsed Essentials</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Field</TableHead>
+                    <TableHead>Key</TableHead>
                     <TableHead>Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {Object.entries(parsedEssentials).map(([key, value]) => (
                     <TableRow key={key}>
-                      <TableCell>{key}</TableCell>
-                      <TableCell>{value as string ?? 'N/A'}</TableCell>
+                      <TableCell className="font-medium">{key}</TableCell>
+                      <TableCell>{value !== null ? String(value) : 'N/A'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -90,27 +89,18 @@ export default function PhaseLayout({
           )}
 
           {risks.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold">Detected Risks</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Risk</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {risks.map((risk, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{risk}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold">Identified Risks</h3>
+              <ul className="list-disc pl-5">
+                {risks.map((risk, index) => (
+                  <li key={index}>{risk}</li>
+                ))}
+              </ul>
             </div>
           )}
 
           {generatedItems.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-6">
               <h3 className="text-lg font-semibold">Generated {generateType.charAt(0).toUpperCase() + generateType.slice(1)}</h3>
               <Table>
                 <TableHeader>

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-05T17:00:54.471Z",
+  "generated_at": "2026-02-06T18:07:24.659Z",
   "branch": "refactor-phase1-flatten",
   "subgraphs": {
     "PhasePages": {
@@ -15,7 +15,7 @@
     "HooksUtils": {
       "ids": [
         "error-utils_ts",
-        "pdf-utils_ts",
+        "file-utils_ts",
         "storage-utils_ts",
         "phase-hook_ts",
         "utils_ts"
@@ -27,9 +27,9 @@
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/admin/triggers/page.tsx\r\n'use client';\r\nimport { useState, useEffect } from 'react';\r\nimport { u...",
+      "desc": "app/admin/triggers/page.tsx (REBUILT: Full UI with left/right divs, buttons/tables/forms; Sonner for...",
       "exports": [],
-      "lines": 454,
+      "lines": 285,
       "external": true
     },
     {
@@ -37,7 +37,7 @@
       "category": "misc",
       "desc": "app/api/ai-rewrite/route.ts\r\nimport { NextRequest, NextResponse } from 'next/server';\r\nimport OpenAI...",
       "exports": [],
-      "lines": 149,
+      "lines": 143,
       "external": true
     },
     {
@@ -51,9 +51,9 @@
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/dashboard/page.tsx (SIMPLIFIED: Removed chat summaries/dev_logs features for Phase 1 focus; move...",
+      "desc": "app/dashboard/page.tsx (UPDATED: Switched to Sonner for toasts; async logout with feedback)\r\n'use cl...",
       "exports": [],
-      "lines": 68,
+      "lines": 61,
       "external": true
     },
     {
@@ -69,17 +69,17 @@
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/page.tsx (UPDATED: Moved all useState and useEffect hooks to top-level before early return to re...",
+      "desc": "app/page.tsx (UPDATED: Switched to Sonner for toasts; promise-based feedback for auth)\n'use client';...",
       "exports": [],
-      "lines": 122,
+      "lines": 106,
       "external": true
     },
     {
       "id": "page_tsx",
       "category": "misc",
-      "desc": "app/phase1a/page.tsx\r\n'use client';\r\n\r\nimport { usePhaseUpload } from '@/lib/phase-hook';\r\nimport Ph...",
+      "desc": "app/phase1a/page.tsx (SWITCHED: To Sonner for stable API; test button updated—remove after verificat...",
       "exports": [],
-      "lines": 36,
+      "lines": 48,
       "external": true
     },
     {
@@ -109,9 +109,9 @@
     {
       "id": "upload-zone_tsx",
       "category": "misc",
-      "desc": "Client component for hooks\r\n\r\nimport { useCallback, useState } from 'react';\r\nimport { useDropzone }...",
+      "desc": "components/forms/upload-zone.tsx\r\n'use client'; // Client component for hooks\r\n\r\nimport { useCallbac...",
       "exports": [],
-      "lines": 65,
+      "lines": 66,
       "external": true
     },
     {
@@ -129,7 +129,7 @@
       "category": "misc",
       "desc": "components/phase-layout.tsx (UPDATED: Removed unused 'uploading' prop to fix lint warning; loading n...",
       "exports": [],
-      "lines": 144,
+      "lines": 134,
       "external": true
     },
     {
@@ -247,9 +247,9 @@
     {
       "id": "ai-calls_ts",
       "category": "misc",
-      "desc": "lib/ai-actions/ai-calls.ts (updated init with bypass)\r\n\r\n'use server'; // NEW: Enforce server-only\r\n...",
+      "desc": "lib/ai-actions/ai-calls.ts (UPDATED: Removed risks; only essentials/splits for Phase 1 parse)\r\n'use ...",
       "exports": [],
-      "lines": 81,
+      "lines": 128,
       "external": true
     },
     {
@@ -260,7 +260,15 @@
         "ParsedJob",
         "createFallbackParsed"
       ],
-      "lines": 40,
+      "lines": 38,
+      "external": true
+    },
+    {
+      "id": "file-utils_ts",
+      "category": "misc",
+      "desc": "lib/ai-actions/file-utils.ts (renamed from pdf-utils.ts)\r\nimport pdf from 'pdf-parse';\r\nimport { PDF...",
+      "exports": [],
+      "lines": 44,
       "external": true
     },
     {
@@ -272,27 +280,19 @@
       "external": true
     },
     {
-      "id": "pdf-utils_ts",
-      "category": "misc",
-      "desc": "lib/ai-actions/pdf-utils.ts\r\n// Extracted PDF handling for text extraction and splitting\r\n\r\nimport p...",
-      "exports": [],
-      "lines": 40,
-      "external": true
-    },
-    {
       "id": "storage-utils_ts",
       "category": "misc",
       "desc": "lib/ai-actions/storage-utils.ts\r\n// Extracted Supabase storage and DB updates (removed updateJobRisk...",
       "exports": [],
-      "lines": 24,
+      "lines": 37,
       "external": true
     },
     {
       "id": "ai-actions_ts",
       "category": "misc",
-      "desc": "lib/ai-actions.ts (refactored: Now orchestration-only, no risks update per schema)\r\n// 'use server';...",
+      "desc": "lib/ai-actions.ts (refactored: Removed risk scan; orchestration for essentials/splits only)\r\n'use se...",
       "exports": [],
-      "lines": 47,
+      "lines": 69,
       "external": true
     },
     {
@@ -329,12 +329,12 @@
     {
       "id": "phase-hook_ts",
       "category": "misc",
-      "desc": "lib/phase-hook.ts (UPDATED: RLS-aligned path starting with '${focus}/user_${userId}/...' to match po...",
+      "desc": "lib/phase-hook.ts (SWITCHED: To Sonner for stable .update-free API; ID-based overwrite for progress)...",
       "exports": [
         "PhaseUploadOptions",
         "usePhaseUpload"
       ],
-      "lines": 165,
+      "lines": 132,
       "external": true
     },
     {
@@ -401,11 +401,11 @@
     {
       "id": "use-auth_ts",
       "category": "misc",
-      "desc": "lib/use-auth.ts (UPDATED: Fixed syntax in useEffect cleanup; added logs for session init/redirects)\r...",
+      "desc": "lib/use-auth.ts (UPDATED: Switched to Sonner for toasts; fixed syntax in useEffect cleanup; added lo...",
       "exports": [
         "useAuth"
       ],
-      "lines": 82,
+      "lines": 74,
       "external": true
     },
     {
@@ -415,7 +415,7 @@
       "exports": [
         "useStandards"
       ],
-      "lines": 104,
+      "lines": 82,
       "external": true
     },
     {
@@ -556,13 +556,13 @@
     },
     {
       "source": "page_tsx",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
     {
       "source": "page_tsx",
-      "target": "fetch",
+      "target": "insertTrigger",
       "type": "call",
       "weight": 8
     },
@@ -574,25 +574,19 @@
     },
     {
       "source": "page_tsx",
-      "target": "insertTrigger",
-      "type": "call",
-      "weight": 8
-    },
-    {
-      "source": "page_tsx",
       "target": "deleteTrigger",
       "type": "call",
       "weight": 8
     },
     {
       "source": "page_tsx",
-      "target": "updateStandard",
+      "target": "insertStandard",
       "type": "call",
       "weight": 8
     },
     {
       "source": "page_tsx",
-      "target": "insertStandard",
+      "target": "updateStandard",
       "type": "call",
       "weight": 8
     },
@@ -688,7 +682,7 @@
     },
     {
       "source": "page_tsx",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -718,7 +712,7 @@
     },
     {
       "source": "layout_tsx",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -784,7 +778,7 @@
     },
     {
       "source": "page_tsx",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -808,7 +802,13 @@
     },
     {
       "source": "page_tsx",
-      "target": "react-hot-toast",
+      "target": "sonner",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "page_tsx",
+      "target": "components_ui_button",
       "type": "import",
       "weight": 5
     },
@@ -1282,12 +1282,6 @@
     },
     {
       "source": "ai-calls_ts",
-      "target": "pdf-parse",
-      "type": "import",
-      "weight": 5
-    },
-    {
-      "source": "ai-calls_ts",
       "target": "lib_prompts_phase1a_essentials",
       "type": "import",
       "weight": 7
@@ -1299,31 +1293,25 @@
       "weight": 7
     },
     {
-      "source": "ai-calls_ts",
-      "target": "lib_prompts_phase1a_risk-prompts",
-      "type": "import",
-      "weight": 7
-    },
-    {
-      "source": "ai-calls_ts",
-      "target": "pdf",
-      "type": "call",
-      "weight": 8
-    },
-    {
-      "source": "pdf-utils_ts",
+      "source": "file-utils_ts",
       "target": "pdf-parse",
       "type": "import",
       "weight": 5
     },
     {
-      "source": "pdf-utils_ts",
+      "source": "file-utils_ts",
       "target": "pdf-lib",
       "type": "import",
       "weight": 5
     },
     {
-      "source": "pdf-utils_ts",
+      "source": "file-utils_ts",
+      "target": "@kenjiuno_msgreader",
+      "type": "import",
+      "weight": 5
+    },
+    {
+      "source": "file-utils_ts",
       "target": "pdf",
       "type": "call",
       "weight": 8
@@ -1348,7 +1336,7 @@
     },
     {
       "source": "ai-actions_ts",
-      "target": "lib_ai-actions_pdf-utils",
+      "target": "lib_ai-actions_file-utils",
       "type": "import",
       "weight": 7
     },
@@ -1384,6 +1372,12 @@
     },
     {
       "source": "ai-actions_ts",
+      "target": "extractMsgText",
+      "type": "call",
+      "weight": 8
+    },
+    {
+      "source": "ai-actions_ts",
       "target": "callAiForEssentials",
       "type": "call",
       "weight": 8
@@ -1402,7 +1396,7 @@
     },
     {
       "source": "ai-actions_ts",
-      "target": "callAiForRisks",
+      "target": "extractPdfText",
       "type": "call",
       "weight": 8
     },
@@ -1414,7 +1408,7 @@
     },
     {
       "source": "ai-actions_ts",
-      "target": "updateJobRisks",
+      "target": "uploadOriginalFile",
       "type": "call",
       "weight": 8
     },
@@ -1468,7 +1462,7 @@
     },
     {
       "source": "phase-hook_ts",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -1534,7 +1528,7 @@
     },
     {
       "source": "use-auth_ts",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -1552,7 +1546,7 @@
     },
     {
       "source": "use-standards_ts",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -1570,7 +1564,7 @@
     },
     {
       "source": "use-triggers_ts",
-      "target": "react-hot-toast",
+      "target": "sonner",
       "type": "import",
       "weight": 5
     },
@@ -1595,7 +1589,7 @@
   ],
   "stats": {
     "nodeCount": 49,
-    "edgeCount": 188,
-    "avgLines": 71.44897959183673
+    "edgeCount": 187,
+    "avgLines": 67.89795918367346
   }
 }

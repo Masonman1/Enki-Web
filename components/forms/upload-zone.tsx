@@ -1,16 +1,18 @@
+// components/forms/upload-zone.tsx
 'use client'; // Client component for hooks
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react'; // UPDATED: Add Loader2
 
 interface UploadZoneProps {
-  onUpload: (files: File[]) => void; // Standardized prop: Callback for accepted files (TypeScript validation)
+  onUpload: (files: File[]) => void;
+  uploading: boolean; // NEW: Pass from PhaseLayout/usePhaseUpload
 }
 
-export default function UploadZone({ onUpload }: UploadZoneProps) {
+export default function UploadZone({ onUpload, uploading }: UploadZoneProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,19 +26,18 @@ export default function UploadZone({ onUpload }: UploadZoneProps) {
     onUpload(acceptedFiles); // Call standardized prop
   }, [onUpload]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'application/pdf': ['.pdf'] }, // PDF only for specs/subcontracts/invoices
-    multiple: true,
-  });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  const clearFiles = () => setFiles([]);
+  const clearFiles = () => {
+    setFiles([]);
+  };
 
   return (
     <div>
+      {uploading && <div className="flex items-center justify-center mb-2"><Loader2 className="h-6 w-6 animate-spin" /> Processing...</div>}
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed p-6 rounded-md text-center cursor-pointer ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+        className={`border-2 border-dashed p-4 rounded-md text-center cursor-pointer ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
       >
         <input {...getInputProps()} />
         <p>{isDragActive ? 'Drop PDFs here...' : 'Drag & drop PDFs, or click to select'}</p>

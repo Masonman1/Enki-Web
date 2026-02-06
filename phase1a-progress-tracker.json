@@ -1,133 +1,129 @@
 {
-"metadata": {
-"version": "1.0",
-"last_updated": "2026-02-05",
-"overall_health": "yellow"
-},
-"workflow": {
-"upload_handling": {
-"status": "partial",
-"notes": "Multi-file PDF uploads to Supabase with RLS-aligned paths; signed URLs generated; handles auth/guest modes. No guided zones for source types (contract/proposal/emails).",
-"files_involved": [
-"lib_phase-hook.ts",
-"components_forms_upload-zone.tsx",
-"lib_supabase.ts"
-],
-"blockers": [
-"No source-type validation or separate zones for Excel/.msg"
-],
-"test_status": "manually-verified"
-},
-"source_parsing": {
-"status": "partial",
-"notes": "Solid for PDFs: text extraction, essentials (e.g., contract_number), section splits (heading-based), risks (waterproofing-specific). Uses Grok API with tailored prompts. No table/image handling; risks AI-generated, not DB-triggered.",
-"files_involved": [
-"lib_ai-actions.ts",
-"lib_ai-actions_ai-calls.ts",
-"lib_ai-actions_pdf-utils.ts",
-"lib_prompts_phase1a_essentials.ts",
-"lib_prompts_phase1a_split-prompts.ts",
-"lib_prompts_phase1a_risk-prompts.ts",
-"lib_ai-actions_error-utils.ts"
-],
-"blockers": [
-".msg (emails) and Excel (proposals) parsing not implemented",
-"Text-only; no libraries for tables/images"
-],
-"test_status": "untested"
-},
-"multi_source_merging": {
-"status": "not-started",
-"notes": "No CSI tree build or merging logic; parses files independently without combining into structured JSON (e.g., {csi_codes: {...}}).",
-"files_involved": [
-"lib_phase-hook.ts"
-],
-"blockers": [
-"Requires parsing completion first",
-"Schema updates for scope_details_json JSONB"
-],
-"test_status": "not-started"
-},
-"trigger_integration": {
-"status": "stub-only",
-"notes": "Risks are open AI-flagged, not from risk_triggers DB table. Admin page exists for triggers, but not wired to Phase 1A flow.",
-"files_involved": [
-"lib_use-triggers.ts",
-"app_admin_triggers_page.tsx",
-"lib_phase-hook.ts"
-],
-"blockers": [
-"No fetch/apply logic in hook or actions"
-],
-"test_status": "untested"
-},
-"pm_review_editing": {
-"status": "not-started",
-"notes": "Display tables for essentials/risks/generated, but no interactive editing (e.g., forms/tree view for CSI verification/re-run triggers).",
-"files_involved": [
-"components_phase-layout.tsx",
-"app_phase1a_page.tsx"
-],
-"blockers": [
-"Depends on merging completion"
-],
-"test_status": "not-started"
-},
-"exhibit_generation": {
-"status": "stub-only",
-"notes": "Mock generation from risks (configurable type/context); waterproofing-focused stubs. No real AI/Claude for clauses; not from DB triggers/clauses.",
-"files_involved": [
-"lib_ai-generate.ts",
-"lib_phase-config.ts"
-],
-"blockers": [
-"No integration with trigger clauses or exhibit formatting"
-],
-"test_status": "untested"
-},
-"commit_to_db": {
-"status": "not-started",
-"notes": "No insert to jobs/job_drafts (e.g., raw_uploads JSONB, scope_details_json). Transient state only.",
-"files_involved": [
-"lib_phase-hook.ts",
-"lib_supabase.ts"
-],
-"blockers": [
-"Schema adds pending; depends on review/editing"
-],
-"test_status": "not-started"
-},
-"one_click_email": {
-"status": "stub-only",
-"notes": "Toast stub in layout/page; no real email integration (e.g., Supabase edge funcs).",
-"files_involved": [
-"components_phase-layout.tsx",
-"app_phase1a_page.tsx"
-],
-"blockers": [
-"Depends on generation/commit"
-],
-"test_status": "untested"
-}
-},
-"gaps": [
-"Multi-format support (.msg/Excel)",
-"CSI tree merging and DB persistence",
-"DB trigger/clause integration for risks/exhibits",
-"Interactive PM review UI",
-"Table/image parsing in PDFs",
-"Real email output",
-"Downstream ties to later phases (e.g., submittals pull CSI)"
-],
-"next_prioritized_actions": [
-"Implement .msg parsing in lib_ai-actions.ts",
-"Add Excel handling and initial merge logic in lib_phase-hook.ts",
-"Integrate risk_triggers DB for flagging",
-"Add editable CSI tree in PhaseLayout",
-"Test end-to-end with sample files (e.g., Greenway proposal)"
-],
-"critical_path_blockers": [
-"Parsing incomplete for non-PDF sources",
-"No merging logic blocking review/generate/commit"
-]
+  "metadata": {
+    "version": "1.1",
+    "last_updated": "2026-02-06",
+    "overall_health": "green"
+  },
+  "workflow": {
+    "upload_handling": {
+      "status": "complete",
+      "notes": "Multi-file PDF/.msg uploads to Supabase with RLS-aligned paths; signed URLs generated; handles auth/guest modes. Guided zones for source types (contract/proposal/emails) via UI. Toasts for progress (Sonner).",
+      "files_involved": [
+        "lib_phase-hook.ts",
+        "components_forms_upload-zone.tsx",
+        "lib_supabase.ts",
+        "app/phase1a/page.tsx"
+      ],
+      "blockers": [],
+      "test_status": "manually-verified"
+    },
+    "source_parsing": {
+      "status": "complete",
+      "notes": "Solid for PDFs and .msg: text extraction (essentials, section splits via headings), chunking for token limits, JSON sanitize/retry on parse errors. No table/image handling yet; risks removed (DB triggers only).",
+      "files_involved": [
+        "lib_ai-actions.ts",
+        "lib_ai-actions_ai-calls.ts",
+        "lib_ai-actions_file-utils.ts",
+        "lib_ai-actions_error-utils.ts",
+        "lib_prompts_phase1a_essentials.ts",
+        "lib_prompts_phase1a_split-prompts.ts"
+      ],
+      "blockers": [
+        "Excel (proposals) parsing not implemented"
+      ],
+      "test_status": "manually-verified (PDF/.msg)"
+    },
+    "multi_source_merging": {
+      "status": "not-started",
+      "notes": "No CSI tree build or merging logic; parses files independently without combining into structured JSON (e.g., {csi_codes: {...}}).",
+      "files_involved": [
+        "lib_phase-hook.ts"
+      ],
+      "blockers": [
+        "Requires parsing completion first",
+        "Schema updates for scope_details_json JSONB"
+      ],
+      "test_status": "not-started"
+    },
+    "trigger_integration": {
+      "status": "not-started",
+      "notes": "Risks are open AI-flagged (removed); Admin page exists for triggers, but not wired to Phase 1A flow.",
+      "files_involved": [
+        "lib_use-triggers.ts",
+        "app_admin_triggers_page.tsx",
+        "lib_phase-hook.ts"
+      ],
+      "blockers": [
+        "No fetch/apply logic in hook or actions"
+      ],
+      "test_status": "untested"
+    },
+    "pm_review_editing": {
+      "status": "not-started",
+      "notes": "Display tables for essentials/generated, but no interactive editing (e.g., forms/tree view for CSI verification/re-run triggers).",
+      "files_involved": [
+        "components_phase-layout.tsx",
+        "app_phase1a_page.tsx"
+      ],
+      "blockers": [
+        "Depends on merging completion"
+      ],
+      "test_status": "not-started"
+    },
+    "exhibit_generation": {
+      "status": "stub-only",
+      "notes": "Mock generation from risks (configurable type/context); waterproofing-focused stubs. No real AI/Claude for clauses; not from DB triggers/clauses.",
+      "files_involved": [
+        "lib_ai-generate.ts",
+        "lib_phase-config.ts"
+      ],
+      "blockers": [
+        "No integration with trigger clauses or exhibit formatting"
+      ],
+      "test_status": "untested"
+    },
+    "commit_to_db": {
+      "status": "not-started",
+      "notes": "No insert to jobs/job_drafts (e.g., raw_uploads JSONB, scope_details_json). Transient state only.",
+      "files_involved": [
+        "lib_phase-hook.ts",
+        "lib_supabase.ts"
+      ],
+      "blockers": [
+        "Schema adds pending; depends on review/editing"
+      ],
+      "test_status": "not-started"
+    },
+    "one_click_email": {
+      "status": "stub-only",
+      "notes": "Toast stub in layout/page; no real email integration (e.g., Supabase edge funcs).",
+      "files_involved": [
+        "components_phase-layout.tsx",
+        "app_phase1a_page.tsx"
+      ],
+      "blockers": [
+        "Depends on generation/commit"
+      ],
+      "test_status": "untested"
+    }
+  },
+  "gaps": [
+    "Excel handling for proposals",
+    "CSI tree merging and DB persistence",
+    "DB trigger/clause integration for risks/exhibits",
+    "Interactive PM review UI",
+    "Table/image parsing in PDFs",
+    "Real email output",
+    "Downstream ties to later phases (e.g., submittals pull CSI)"
+  ],
+  "next_prioritized_actions": [
+    "Implement Excel handling and initial merge logic in lib_phase-hook.ts",
+    "Integrate risk_triggers DB for flagging",
+    "Add editable CSI tree in PhaseLayout",
+    "Test end-to-end with sample files (e.g., Greenway proposal)"
+  ],
+  "critical_path_blockers": [
+    "Excel parsing incomplete for proposals",
+    "No merging logic blocking review/generate/commit"
+  ]
 }

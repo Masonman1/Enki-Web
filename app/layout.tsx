@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google"; // CORRECTED: Use 'Geist' and 'Geist_Mono' from next/font/google (per workspace file; fixes "Unknown font" error)
 import "./globals.css";
 import AuthWrapper from "@/components/auth-wrapper";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner"; // NEW: Import Sonner Toaster
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +30,7 @@ export default function RootLayout({
         <AuthWrapper>
           {children}
         </AuthWrapper>
-        <Toaster position="top-center" />
+        <Toaster position="top-center" expand={true} richColors duration={4000} /> {/* NEW: Sonner Toaster with Phase 1 options (expand for details, longer duration) */}
       </body>
     </html>
   );
